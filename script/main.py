@@ -7,7 +7,9 @@ import truststore
 
 if __name__ == '__main__':
     dotenv.load_dotenv(".env")
-    USER_ID, HASH = os.environ.get("USER_ID"), os.environ.get("HASH")
+    BASE_URL = os.getenv("BASE_URL")
+    USER_ID = os.environ.get("USER_ID")
+    HASH = os.environ.get("HASH")
 
     truststore.inject_into_ssl()
     query_params = {
@@ -25,5 +27,6 @@ if __name__ == '__main__':
     headers = {
         'Content-Type': 'application/json'
     }
-    response = requests.post("http://localhost:3000/api/timetable", payload,
+    ENDPOINT = "/api/timetable"
+    response = requests.post(f"{BASE_URL.rstrip('/')}/{ENDPOINT.lstrip('/')}", payload,
                              params=query_params, headers=headers, verify=True)
