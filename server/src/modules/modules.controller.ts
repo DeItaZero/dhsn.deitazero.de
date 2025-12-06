@@ -11,6 +11,6 @@ export class ModulesController {
 
   @Get()
   async getAllModules(@Query('seminarGroupId') seminarGroupId: string) {
-    return this.modulesService.getModules(seminarGroupId);
+    return await this.modulesService.getModules(seminarGroupId);
   }
 }

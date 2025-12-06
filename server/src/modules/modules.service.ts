@@ -3,20 +3,17 @@ https://docs.nestjs.com/providers#services
 */
 
 import { Injectable } from '@nestjs/common';
-import { getAllTimetables } from '../utils/file.utils';
+import { loadAllTimetables } from '../utils/file.utils';
 import { Block } from '@shared/types/block.types';
 import { Module } from '@shared/types/modules.types';
-import { getDistinct } from '../utils/utils';
+import { getDistinct, getGroup } from '../utils/utils';
 
 @Injectable()
 export class ModulesService {
   async getModules(seminarGroupId: string) {
-    const timetables = await getAllTimetables(seminarGroupId);
+    const timetables = await loadAllTimetables(seminarGroupId);
     const blocks = timetables.flat(1);
     const moduleNames = getDistinct(blocks.map((block) => block.title));
-
-    const getGroup = (block: Block) =>
-      /Gruppe (\w+)/.exec(block.remarks)?.at(1);
 
     return moduleNames.map((moduleName) => {
       const filteredBlocks = blocks.filter(

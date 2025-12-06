@@ -7,9 +7,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import type { Timetable } from '@shared/types/timetable.types';
 import { TimetableService } from './timetable.service';
 import { isValidSeminarGroupId, isValidStudentId } from '../utils/validators';
@@ -19,11 +22,18 @@ export class TimetableController {
   constructor(private readonly timetableService: TimetableService) {}
 
   @Get()
-  async getTimetable(@Query('seminarGroupId') seminarGroupId: string) {
+  @Header('Content-Type', 'text/calendar; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="timetable.ics"')
+  async getTimetable(
+    @Res() response: Response,
+    @Query('seminarGroupId') seminarGroupId: string,
+  ) {
     if (!isValidSeminarGroupId(seminarGroupId))
       throw new BadRequestException('seminar group id invalid');
 
-    return await this.timetableService.getTimetable(seminarGroupId);
+    const timetable = await this.timetableService.getTimetable(seminarGroupId);
+
+    response.send(timetable);
   }
 
   @Post()
