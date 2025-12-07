@@ -10,9 +10,29 @@ import { getDistinctObjects, getGroup } from '../utils/utils';
 
 @Injectable()
 export class TimetableService {
-  async getTimetable(seminarGroupId: string) {
+  async getTimetable(seminarGroupId: string, ignoredItems: string[] = []) {
     const timetables = await loadAllTimetables(seminarGroupId);
-    const blocks = getDistinctObjects(timetables.flat(1));
+    let blocks = getDistinctObjects(timetables.flat(1));
+
+    if (ignoredItems.length > 0) {
+      const ignoredSet = new Set(ignoredItems);
+      blocks = blocks.filter(block => {
+        // Check for standalone module ignore
+        if (ignoredSet.has(block.title)) {
+          return false;
+        }
+        // Check for module|group pair ignore
+        const group = getGroup(block);
+        if (group) {
+          const key = `${block.title}|${group}`;
+          if (ignoredSet.has(key)) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
     const calendar = ical({ name: `Stundenplan ${seminarGroupId}` });
 
     for (let block of blocks) {

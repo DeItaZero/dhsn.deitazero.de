@@ -27,11 +27,17 @@ export class TimetableController {
   async getTimetable(
     @Res() response: Response,
     @Query('seminarGroupId') seminarGroupId: string,
+    @Query('ignore') ignore?: string,
   ) {
     if (!isValidSeminarGroupId(seminarGroupId))
       throw new BadRequestException('seminar group id invalid');
 
-    const timetable = await this.timetableService.getTimetable(seminarGroupId);
+    const ignoredModules = ignore ? ignore.split(',') : [];
+
+    const timetable = await this.timetableService.getTimetable(
+      seminarGroupId,
+      ignoredModules,
+    );
 
     response.send(timetable);
   }

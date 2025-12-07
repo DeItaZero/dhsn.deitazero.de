@@ -1,34 +1,32 @@
-import "./App.css";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import { Modules } from "./pages/Modules/Modules"; // Adjust path if needed
-
-// Simple Home Component
-const Home = () => (
-	<div>
-		<h1>Welcome Home</h1>
-		<p>Select a page from the menu.</p>
-	</div>
-);
+import { BrowserRouter, Routes, Route, Link as RouterLink } from "react-router-dom";
+import { AppBar, Box, Toolbar, Typography, Link } from "@mui/material";
+import { Modules } from "./pages/Modules/Modules";
+import Home from "./pages/Home/Home";
 
 function App() {
 	return (
 		<BrowserRouter>
-			{/* Wrapper to control layout */}
-			<div className="app-layout">
-				{/* Top Navbar */}
-				<nav className="app-nav">
-					<Link to="/">Home</Link>
-					<Link to="/modules">Modules</Link>
-				</nav>
-
-				{/* Main Content Area */}
-				<main className="app-content">
+			<Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+				<AppBar position="static">
+					<Toolbar>
+						<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+							DeitaZero
+						</Typography>
+						<Link component={RouterLink} to="/" color="inherit" sx={{ mr: 2 }}>
+							Home
+						</Link>
+						<Link component={RouterLink} to="/modules" color="inherit">
+							Modules
+						</Link>
+					</Toolbar>
+				</AppBar>
+				<Box component="main" sx={{ flexGrow: 1, p: 3 }}>
 					<Routes>
 						<Route path="/" element={<Home />} />
 						<Route path="/modules" element={<Modules />} />
 					</Routes>
-				</main>
-			</div>
+				</Box>
+			</Box>
 		</BrowserRouter>
 	);
 }
