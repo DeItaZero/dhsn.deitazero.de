@@ -2,8 +2,13 @@
 https://docs.nestjs.com/controllers#controllers
 */
 
-import { Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { ModulesService } from './modules.service';
+import {
+  isValidGroup,
+  isValidModuleCode,
+  isValidSeminarGroupId,
+} from '../utils/validators';
 
 @Controller('api/modules')
 export class ModulesController {
@@ -11,6 +16,36 @@ export class ModulesController {
 
   @Get()
   async getAllModules(@Query('seminarGroupId') seminarGroupId: string) {
+    if (!isValidSeminarGroupId(seminarGroupId))
+      throw new BadRequestException('seminar group id invalid');
+
     return await this.modulesService.getModules(seminarGroupId);
+  }
+
+  @Get('/info')
+  async getModuleInfo(
+    @Query('seminarGroupId') seminarGroupId: string,
+    @Query('moduleCode') moduleCode: string,
+    @Query('group') group: string,
+  ) {
+    if (!isValidSeminarGroupId(seminarGroupId))
+      throw new BadRequestException('seminar group id invalid');
+
+    if (!isValidModuleCode(moduleCode))
+      throw new BadRequestException('module code invalid');
+
+    const hasGroups = await this.modulesService.hasGroups(
+      seminarGroupId,
+      moduleCode,
+    );
+
+    if (hasGroups && !isValidGroup(group))
+      throw new BadRequestException('group invalid');
+
+    return await this.modulesService.getModuleInfo(
+      seminarGroupId,
+      moduleCode,
+      group,
+    );
   }
 }

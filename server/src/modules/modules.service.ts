@@ -19,7 +19,7 @@ export class ModulesService {
       const filteredBlocks = blocks.filter(
         (block) => block.title === moduleCode,
       );
-      const moduleName = filteredBlocks.at(0)?.description
+      const moduleName = filteredBlocks.at(0)?.description;
       const groups = getDistinct(
         filteredBlocks.map(getGroup).filter((group) => group !== undefined),
       );
@@ -29,5 +29,27 @@ export class ModulesService {
         groups: groups.length > 0 ? groups : undefined,
       } as Module;
     });
+  }
+
+  async hasGroups(seminarGroupId: string, moduleCode: string) {
+    const modules = await this.getModules(seminarGroupId);
+    const module = modules.find((module) => module.code === moduleCode);
+    return !!module?.groups;
+  }
+
+  async getModuleInfo(
+    seminarGroupId: string,
+    moduleCode: string,
+    group?: string,
+  ) {
+    const timetables = await loadAllTimetables(seminarGroupId);
+    const blocks = timetables.flat(1);
+    let filteredBlocks = blocks.filter((block) => block.title === moduleCode);
+    if (group)
+      filteredBlocks = filteredBlocks.filter(
+        (block) => getGroup(block) === group || getGroup(block) === undefined,
+      );
+
+    return filteredBlocks;
   }
 }
