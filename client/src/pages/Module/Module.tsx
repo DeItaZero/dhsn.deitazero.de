@@ -9,10 +9,13 @@ import {
   TextField,
   Box,
   CircularProgress,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { GroupsService } from '@api/groups.service';
 import { ModulesService } from '@api/modules.service';
 import type { Module as ModuleType } from '@shared/types/modules.types';
+import type { Block } from '@shared/types/block.types';
 import './Module.css';
 
 const Module: React.FC = () => {
@@ -24,6 +27,9 @@ const Module: React.FC = () => {
   const [attendedModules, setAttendedModules] = useState<number | ''>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [totalModules, setTotalModules] = useState<number>(0);
+  const [attendance, setAttendance] = useState<number>(0);
 
   useEffect(() => {
     document.title = "Module";
@@ -43,6 +49,7 @@ const Module: React.FC = () => {
     }
     setIsLoading(true);
     setError(null);
+    setBlocks([]);
     ModulesService.get(selectedSeminarGroup)
       .then(setModules)
       .catch((err) => {
@@ -54,6 +61,38 @@ const Module: React.FC = () => {
       });
   }, [selectedSeminarGroup]);
 
+  useEffect(() => {
+    if (attendedModules !== '' && totalModules > 0) {
+      setAttendance((attendedModules / totalModules) * 100);
+    } else {
+      setAttendance(0);
+    }
+  }, [attendedModules, totalModules]);
+
+  useEffect(() => {
+    const hasGroups = modules.find(m => m.code === selectedModuleCode)?.groups?.length > 0;
+    if (selectedModuleCode && (!hasGroups || (hasGroups && selectedGroup))) {
+      setIsLoading(true);
+      setError(null);
+      ModulesService.getInfo(selectedSeminarGroup, selectedModuleCode, selectedGroup)
+        .then((data) => {
+          setBlocks(data);
+          setTotalModules(data.length);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch module info:', err);
+          setError('Modul-Informationen konnten nicht geladen werden.');
+          setBlocks([]);
+          setTotalModules(0);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setBlocks([]);
+      setTotalModules(0);
+    }
+  }, [selectedModuleCode, selectedGroup, selectedSeminarGroup, modules]);
 
   const handleAttendedModulesChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -131,32 +170,48 @@ const Module: React.FC = () => {
             </FormControl>
           )}
 
+          {blocks.length > 0 && (
+            <>
+              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <TextField
+                  label="Anzahl besuchter Module"
+                  type="number"
+                  value={attendedModules}
+                  onChange={handleAttendedModulesChange}
+                  inputProps={{ min: '0', step: '1' }}
+                />
+                <Typography variant="body1">/ {totalModules}</Typography>
+              </Box>
+
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6">Anwesenheit</Typography>
+                <Typography variant="body1">
+                  {attendance.toFixed(2)} %
+                </Typography>
+              </Box>
+            </>
+          )}
+
           <Box sx={{ mt: 3 }}>
             <Typography variant="h6">Meine Module</Typography>
-            {/* This section will later display the user's modules. */}
-            <Typography variant="body2" color="text.secondary">
-              (Anzeige der Module des Benutzers ist noch nicht implementiert)
-            </Typography>
-          </Box>
-
-          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <TextField
-              label="Anzahl besuchter Module"
-              type="number"
-              value={attendedModules}
-              onChange={handleAttendedModulesChange}
-              inputProps={{ min: '0', step: '1' }}
-            />
-            <Typography variant="body1">
-              / (Gesamtzahl der Module noch nicht implementiert)
-            </Typography>
-          </Box>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6">Anwesenheit</Typography>
-            <Typography variant="body1">
-              (Anwesenheit in Prozent noch nicht implementiert)
-            </Typography>
+            {blocks.length > 0 ? (
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2, mt: 2 }}>
+                {blocks.map((block) => (
+                  <Card key={`${block.start}-${block.title}`} variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle1" component="div">{block.description}</Typography>
+                      <Typography color="text.secondary">{new Date(block.start * 1000).toLocaleString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
+                      <Typography color="text.secondary">{block.instructor}</Typography>
+                      <Typography color="text.secondary">{block.room}</Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                (Keine Module für diese Auswahl gefunden)
+              </Typography>
+            )}
           </Box>
         </>
       )}
