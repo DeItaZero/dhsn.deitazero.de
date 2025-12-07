@@ -7,6 +7,9 @@ import App from './App.tsx';
 const theme = createTheme({
   palette: {
     mode: 'dark',
+    background: {
+      paper: '#272727',
+    },
   },
 });
 

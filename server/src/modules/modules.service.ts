@@ -13,16 +13,18 @@ export class ModulesService {
   async getModules(seminarGroupId: string) {
     const timetables = await loadAllTimetables(seminarGroupId);
     const blocks = timetables.flat(1);
-    const moduleNames = getDistinct(blocks.map((block) => block.title));
+    const moduleCodes = getDistinct(blocks.map((block) => block.title));
 
-    return moduleNames.map((moduleName) => {
+    return moduleCodes.map((moduleCode) => {
       const filteredBlocks = blocks.filter(
-        (block) => block.title === moduleName,
+        (block) => block.title === moduleCode,
       );
+      const moduleName = filteredBlocks.at(0)?.description
       const groups = getDistinct(
         filteredBlocks.map(getGroup).filter((group) => group !== undefined),
       );
       return {
+        code: moduleCode,
         name: moduleName,
         groups: groups.length > 0 ? groups : undefined,
       } as Module;

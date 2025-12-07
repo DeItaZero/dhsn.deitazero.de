@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route, Link as RouterLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link as RouterLink, Navigate } from "react-router-dom";
 import { AppBar, Box, Toolbar, Typography, Link } from "@mui/material";
-import { Modules } from "./pages/Modules/Modules";
-import Home from "./pages/Home/Home";
+import { Stundenplan } from "./pages/Stundenplan/Stundenplan";
 
 function App() {
 	return (
@@ -12,18 +11,15 @@ function App() {
 						<Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
 							DeitaZero
 						</Typography>
-						<Link component={RouterLink} to="/" color="inherit" sx={{ mr: 2 }}>
-							Home
-						</Link>
 						<Link component={RouterLink} to="/modules" color="inherit">
-							Modules
+							Stundenplan
 						</Link>
 					</Toolbar>
 				</AppBar>
 				<Box component="main" sx={{ flexGrow: 1, p: 3 }}>
 					<Routes>
-						<Route path="/" element={<Home />} />
-						<Route path="/modules" element={<Modules />} />
+						<Route path="/" element={<Navigate to="/modules" />} />
+						<Route path="/modules" element={<Stundenplan />} />
 					</Routes>
 				</Box>
 			</Box>
