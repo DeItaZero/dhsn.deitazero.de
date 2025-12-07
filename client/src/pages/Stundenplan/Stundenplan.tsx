@@ -6,12 +6,16 @@ import {
 	Checkbox,
 	CircularProgress,
 	FormControl,
+	IconButton,
+	InputAdornment,
 	InputLabel,
-	Link,
 	MenuItem,
+	OutlinedInput,
 	Select,
+	Tooltip,
 	Typography
 } from '@mui/material';
+import ContentCopy from '@mui/icons-material/ContentCopy';
 import { ModulesService } from '@api/modules.service';
 import { GroupsService } from '@api/groups.service';
 import type { Module } from '@shared/types/modules.types';
@@ -89,6 +93,7 @@ export function Stundenplan() {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+	const [isCopied, setIsCopied] = useState<boolean>(false);
 
     useEffect(() => {
         document.title = "Stundenplan";
@@ -165,7 +170,7 @@ export function Stundenplan() {
 
 	// --- URL Generation ---
 	useEffect(() => {
-		if (!selectedGroup) {
+		if (typeof window === 'undefined' || !selectedGroup) {
 			setGeneratedUrl(null);
 			return;
 		}
@@ -195,10 +200,19 @@ export function Stundenplan() {
 		}
 
 		const ignoredQueryString = finalIgnoredParams.join(',');
-		const url = `/api/timetable?seminarGroupId=${selectedGroup}${ignoredQueryString ? `&ignore=${ignoredQueryString}` : ''}`;
-		setGeneratedUrl(url);
+		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${ignoredQueryString ? `&ignore=${ignoredQueryString}` : ''}`;
+		const fullUrl = `${window.location.origin}${relativeUrl}`;
+		setGeneratedUrl(fullUrl);
 	}, [ignored, selectedGroup, modules]);
 
+	const handleCopy = () => {
+		if (generatedUrl) {
+			navigator.clipboard.writeText(generatedUrl).then(() => {
+				setIsCopied(true);
+				setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+			});
+		}
+	};
 	// --- Render ---
 	return (
 		<Box sx={{ p: 2 }}>
@@ -240,8 +254,28 @@ export function Stundenplan() {
 					</Box>
 					{generatedUrl && (
 						<Box sx={{ mt: 3 }}>
-							<Typography variant="h6">Generierte URL:</Typography>
-							<Link href={generatedUrl} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all' }}>{generatedUrl}</Link>
+							<FormControl fullWidth variant="outlined">
+								<InputLabel htmlFor="generated-url-textfield">Generierte URL</InputLabel>
+								<OutlinedInput
+									id="generated-url-textfield"
+									value={generatedUrl}
+									readOnly
+									label="Generierte URL"
+									endAdornment={
+										<InputAdornment position="end">
+											<Tooltip title={isCopied ? "Kopiert!" : "Kopieren"}>
+												<IconButton
+													aria-label="URL kopieren"
+													onClick={handleCopy}
+													edge="end"
+												>
+													<ContentCopy />
+												</IconButton>
+											</Tooltip>
+										</InputAdornment>
+									}
+								/>
+							</FormControl>
 						</Box>
 					)}
 				</>
