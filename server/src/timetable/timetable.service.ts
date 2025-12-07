@@ -16,7 +16,7 @@ export class TimetableService {
 
     if (ignoredItems.length > 0) {
       const ignoredSet = new Set(ignoredItems);
-      blocks = blocks.filter(block => {
+      blocks = blocks.filter((block) => {
         // Check for standalone module ignore
         if (ignoredSet.has(block.title)) {
           return false;
@@ -33,15 +33,24 @@ export class TimetableService {
       });
     }
 
-    const calendar = ical({ name: `Stundenplan ${seminarGroupId}` });
+    const calendar = ical({
+      name: `Stundenplan ${seminarGroupId}`,
+      timezone: 'Europe/Berlin',
+    });
 
     for (let block of blocks) {
+      const moduleCode = block.title;
+      const moduleName = block.description;
       const group = getGroup(block);
+      let description = `Modul: ${moduleCode}\nDozent: ${block.instructor}`;
+      if (block.remarks) description += `\nBemerkungen: ${block.remarks}`;
 
       calendar.createEvent({
         start: new Date(block.start * 1000),
-        summary: block.title,
-        description: `${block.instructor}`,
+        summary: group ? `${group} | ${moduleName}` : moduleName,
+        allDay: block.allDay,
+        location: block.room,
+        description,
       });
     }
 
