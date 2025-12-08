@@ -47,6 +47,7 @@ export class TimetableService {
 
       calendar.createEvent({
         start: new Date(block.start * 1000),
+        end: new Date(block.end * 1000),
         summary: group ? `${group} | ${moduleName}` : moduleName,
         allDay: block.allDay,
         location: block.room,
