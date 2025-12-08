@@ -1,16 +1,32 @@
-# This is a sample Python script.
-
-# Press Umschalt+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Strg+F8 to toggle the breakpoint.
+import json
+import requests
+import dotenv
+import os
+import truststore
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    dotenv.load_dotenv(".env")
+    BASE_URL = os.getenv("BASE_URL")
+    USER_ID = os.environ.get("USER_ID")
+    HASH = os.environ.get("HASH")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    truststore.inject_into_ssl()
+    query_params = {
+        "userid": USER_ID,
+        "hash": HASH
+    }
+    response = requests.get(f"https://selfservice.campus-dual.de/room/json", params=query_params, verify=True)
+    payload = response.json()
+    payload = json.dumps(payload, ensure_ascii=False, indent=2)
+
+    query_params = {
+        "studentId": f"s{USER_ID}",
+        "seminarGroupId": "CS23-2"
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    ENDPOINT = "/api/timetable"
+    response = requests.post(f"{BASE_URL.rstrip('/')}/{ENDPOINT.lstrip('/')}", payload,
+                             params=query_params, headers=headers, verify=True)
