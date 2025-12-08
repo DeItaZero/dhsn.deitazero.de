@@ -16,9 +16,9 @@ import { GroupsService } from '@api/groups.service';
 import { ModulesService } from '@api/modules.service';
 import type { Module as ModuleType } from '@shared/types/modules.types';
 import type { Block } from '@shared/types/block.types';
-import './Module.css';
+import './Anwesenheit.css';
 
-const Module: React.FC = () => {
+const Anwesenheit: React.FC = () => {
   const [seminarGroups, setSeminarGroups] = useState<string[]>([]);
   const [selectedSeminarGroup, setSelectedSeminarGroup] = useState<string>('');
   const [modules, setModules] = useState<ModuleType[]>([]);
@@ -32,7 +32,7 @@ const Module: React.FC = () => {
   const [attendance, setAttendance] = useState<number>(0);
 
   useEffect(() => {
-    document.title = "Module";
+    document.title = "Anwesenheit";
     GroupsService.get()
       .then(setSeminarGroups)
       .catch((err) => {
@@ -69,8 +69,10 @@ const Module: React.FC = () => {
     }
   }, [attendedModules, totalModules]);
 
+  const selectedModule = modules.find(m => m.code === selectedModuleCode);
+
   useEffect(() => {
-    const hasGroups = modules.find(m => m.code === selectedModuleCode)?.groups?.length > 0;
+    const hasGroups = selectedModule && selectedModule.groups && selectedModule.groups.length > 0;
     if (selectedModuleCode && (!hasGroups || (hasGroups && selectedGroup))) {
       setIsLoading(true);
       setError(null);
@@ -92,7 +94,7 @@ const Module: React.FC = () => {
       setBlocks([]);
       setTotalModules(0);
     }
-  }, [selectedModuleCode, selectedGroup, selectedSeminarGroup, modules]);
+  }, [selectedModuleCode, selectedGroup, selectedSeminarGroup, modules, selectedModule]);
 
   const handleAttendedModulesChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -103,12 +105,10 @@ const Module: React.FC = () => {
     }
   };
 
-  const selectedModule = modules.find(m => m.code === selectedModuleCode);
-
   return (
-    <Container className="module-page">
+    <Container className="anwesenheit-page">
       <Typography variant="h4" gutterBottom>
-        Module
+        Anwesenheit
       </Typography>
       <FormControl fullWidth sx={{ mb: 3 }}>
         <InputLabel id="seminar-group-select-label">Seminargruppe</InputLabel>
@@ -219,4 +219,4 @@ const Module: React.FC = () => {
   );
 };
 
-export default Module;
+export default Anwesenheit;
