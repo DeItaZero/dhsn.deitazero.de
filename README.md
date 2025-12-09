@@ -28,6 +28,7 @@ Navigiere in das Verzeichnis `/script` und erstelle eine Datei `.env` mit folgen
 BASE_URL=https://dhsn.deitazero.de/
 USER_ID=<USER_ID>
 HASH=<HASH>
+SEMINAR_GROUP=<SEMINAR_GROUP>
 ```
 
 **Erklärung:**
@@ -35,6 +36,7 @@ HASH=<HASH>
 - **BASE_URL:** Basis-URL des Dienstes.
 - **USER_ID:** Matrikelnummer.
 - **HASH:** Persönlicher Authentifizierungs-Hash.
+- **SEMINAR_GROUP:** Seminargruppe. z.B. `CS23-1`
 
 ---
 
