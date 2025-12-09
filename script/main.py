@@ -12,6 +12,7 @@ if __name__ == '__main__':
     BASE_URL = os.getenv("BASE_URL")
     USER_ID = os.environ.get("USER_ID")
     HASH = os.environ.get("HASH")
+    SEMINAR_GROUP = os.environ.get("SEMINAR_GROUP")
 
     truststore.inject_into_ssl()
     query_params = {
@@ -24,7 +25,7 @@ if __name__ == '__main__':
 
     query_params = {
         "studentId": f"s{USER_ID}",
-        "seminarGroupId": "CS23-2"
+        "seminarGroupId": SEMINAR_GROUP
     }
     headers = {
         'Content-Type': 'application/json'
