@@ -1,4 +1,6 @@
 import json
+import sys
+
 import requests
 import dotenv
 import os
@@ -30,3 +32,8 @@ if __name__ == '__main__':
     ENDPOINT = "/api/timetable"
     response = requests.post(f"{BASE_URL.rstrip('/')}/{ENDPOINT.lstrip('/')}", payload,
                              params=query_params, headers=headers, verify=True)
+
+    if response.status_code != 201:
+        sys.stderr.write("Request failed with status code: " + str(response.status_code))
+    else:
+        print("Successfully synced timetable!")
