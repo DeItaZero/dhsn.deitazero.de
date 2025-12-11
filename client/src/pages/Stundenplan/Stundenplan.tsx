@@ -207,11 +207,11 @@ export function Stundenplan() {
 
 		const paramString = finalIgnoredParams.join(',');
 
-		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&ignore=${paramString}` : ''}`;
+		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&ignore=${encodeURIComponent(paramString)}` : ''}`;
 		const fullUrl = `${window.location.origin}${relativeUrl}`;
 		setGeneratedUrl(fullUrl);
 
-		const relativeUrlWithShow = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&show=${paramString}` : ''}`;
+		const relativeUrlWithShow = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&show=${encodeURIComponent(paramString)}` : ''}`;
 		const fullUrlWithShow = `${window.location.origin}${relativeUrlWithShow}`;
 		setGeneratedUrlWithShow(fullUrlWithShow);
 	}, [ignored, selectedGroup, modules]);
