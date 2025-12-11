@@ -13,7 +13,9 @@ import {
 	OutlinedInput,
 	Select,
 	Tooltip,
-	Typography
+	Typography,
+	Button,
+	Collapse,
 } from '@mui/material';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import { ModulesService } from '@api/modules.service';
@@ -93,7 +95,10 @@ export function Stundenplan() {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+	const [generatedUrlWithShow, setGeneratedUrlWithShow] = useState<string | null>(null);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+	const [isCopiedWithShow, setIsCopiedWithShow] = useState<boolean>(false);
+	const [showAdvancedUrl, setShowAdvancedUrl] = useState<boolean>(false);
 
     useEffect(() => {
         document.title = "Stundenplan";
@@ -172,6 +177,7 @@ export function Stundenplan() {
 	useEffect(() => {
 		if (typeof window === 'undefined' || !selectedGroup) {
 			setGeneratedUrl(null);
+			setGeneratedUrlWithShow(null);
 			return;
 		}
 
@@ -199,10 +205,15 @@ export function Stundenplan() {
 			}
 		}
 
-		const ignoredQueryString = finalIgnoredParams.join(',');
-		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${ignoredQueryString ? `&ignore=${ignoredQueryString}` : ''}`;
+		const paramString = finalIgnoredParams.join(',');
+
+		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&ignore=${encodeURIComponent(paramString)}` : ''}`;
 		const fullUrl = `${window.location.origin}${relativeUrl}`;
 		setGeneratedUrl(fullUrl);
+
+		const relativeUrlWithShow = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&show=${encodeURIComponent(paramString)}` : ''}`;
+		const fullUrlWithShow = `${window.location.origin}${relativeUrlWithShow}`;
+		setGeneratedUrlWithShow(fullUrlWithShow);
 	}, [ignored, selectedGroup, modules]);
 
 	const handleCopy = () => {
@@ -210,6 +221,15 @@ export function Stundenplan() {
 			navigator.clipboard.writeText(generatedUrl).then(() => {
 				setIsCopied(true);
 				setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+			});
+		}
+	};
+
+	const handleCopyWithShow = () => {
+		if (generatedUrlWithShow) {
+			navigator.clipboard.writeText(generatedUrlWithShow).then(() => {
+				setIsCopiedWithShow(true);
+				setTimeout(() => setIsCopiedWithShow(false), 2000);
 			});
 		}
 	};
@@ -276,6 +296,39 @@ export function Stundenplan() {
 									}
 								/>
 							</FormControl>
+
+							<Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+								<Button onClick={() => setShowAdvancedUrl(prev => !prev)}>
+									{showAdvancedUrl ? 'Erweiterte URL ausblenden' : 'Erweiterte URL anzeigen'}
+								</Button>
+							</Box>
+
+							<Collapse in={showAdvancedUrl}>
+								<Box sx={{ mt: 2 }}>
+									<FormControl fullWidth variant="outlined">
+										<InputLabel htmlFor="generated-url-show-textfield">Generierte URL (mit 'show')</InputLabel>
+										<OutlinedInput
+											id="generated-url-show-textfield"
+											value={generatedUrlWithShow || ''}
+											readOnly
+											label="Generierte URL (mit 'show')"
+											endAdornment={
+												<InputAdornment position="end">
+													<Tooltip title={isCopiedWithShow ? "Kopiert!" : "Kopieren"}>
+														<IconButton
+															aria-label="URL kopieren"
+															onClick={handleCopyWithShow}
+															edge="end"
+														>
+															<ContentCopy />
+														</IconButton>
+													</Tooltip>
+												</InputAdornment>
+											}
+										/>
+									</FormControl>
+								</Box>
+							</Collapse>
 						</Box>
 					)}
 				</>

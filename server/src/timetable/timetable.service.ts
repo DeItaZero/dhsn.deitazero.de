@@ -10,7 +10,11 @@ import { getDistinctObjects, getGroup } from '../utils/utils';
 
 @Injectable()
 export class TimetableService {
-  async getTimetable(seminarGroupId: string, ignoredItems: string[] = []) {
+  async getTimetable(
+    seminarGroupId: string,
+    ignoredItems: string[] = [],
+    showedItems: string[] = [],
+  ) {
     const timetables = await loadAllTimetables(seminarGroupId);
     let blocks = getDistinctObjects(timetables.flat(1));
 
@@ -30,6 +34,26 @@ export class TimetableService {
           }
         }
         return true;
+      });
+    }
+
+    console.log(showedItems);
+    if (showedItems.length > 0) {
+      const showedSet = new Set(showedItems);
+      blocks = blocks.filter((block) => {
+        // Check for standalone module ignore
+        if (showedSet.has(block.title)) {
+          return true;
+        }
+        // Check for module|group pair ignore
+        const group = getGroup(block);
+        if (group) {
+          const key = `${block.title}|${group}`;
+          if (showedSet.has(key)) {
+            return true;
+          }
+        }
+        return false;
       });
     }
 

@@ -28,15 +28,23 @@ export class TimetableController {
     @Res() response: Response,
     @Query('seminarGroupId') seminarGroupId: string,
     @Query('ignore') ignore?: string,
+    @Query('show') show?: string,
   ) {
     if (!isValidSeminarGroupId(seminarGroupId))
       throw new BadRequestException('seminar group id invalid');
 
     const ignoredModules = ignore ? ignore.split(',') : [];
+    const showedModules = show ? show.split(',') : [];
+
+    if (ignoredModules.length > 0 && showedModules.length > 0)
+      throw new BadRequestException(
+        'modules can be either explicitely ignored or showed',
+      );
 
     const timetable = await this.timetableService.getTimetable(
       seminarGroupId,
       ignoredModules,
+      showedModules,
     );
 
     response.send(timetable);
