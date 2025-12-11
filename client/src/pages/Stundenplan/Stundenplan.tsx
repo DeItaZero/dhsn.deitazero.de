@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
 	Box,
+	Button,
 	Card,
 	CardContent,
 	Checkbox,
@@ -92,8 +93,9 @@ export function Stundenplan() {
 	const [ignored, setIgnored] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+	const [isCopiedInverted, setIsCopiedInverted] = useState<boolean>(false);
+	const [showInvertedUrl, setShowInvertedUrl] = useState<boolean>(false);
 
     useEffect(() => {
         document.title = "Stundenplan";
@@ -169,10 +171,9 @@ export function Stundenplan() {
 	}, []);
 
 	// --- URL Generation ---
-	useEffect(() => {
+	const generatedUrl = useMemo(() => {
 		if (typeof window === 'undefined' || !selectedGroup) {
-			setGeneratedUrl(null);
-			return;
+			return null;
 		}
 
 		const finalIgnoredParams: string[] = [];
@@ -201,8 +202,43 @@ export function Stundenplan() {
 
 		const ignoredQueryString = finalIgnoredParams.join(',');
 		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${ignoredQueryString ? `&ignore=${ignoredQueryString}` : ''}`;
-		const fullUrl = `${window.location.origin}${relativeUrl}`;
-		setGeneratedUrl(fullUrl);
+		return `${window.location.origin}${relativeUrl}`;
+	}, [ignored, selectedGroup, modules]);
+
+	const generatedInvertedUrl = useMemo(() => {
+		if (typeof window === 'undefined' || !selectedGroup) {
+			return null;
+		}
+	
+		// For the inverted URL, we want to ignore what is currently *selected*.
+		const invertedIgnoredParams: string[] = [];
+		for (const module of modules) {
+			const hasGroups = module.groups && module.groups.length > 0;
+			if (hasGroups) {
+				const groupKeys = module.groups!.map(g => getGroupIgnoreKey(module.code, g));
+				
+				// These are the groups the user has *selected* (i.e., not ignored).
+				const selectedGroupKeys = groupKeys.filter(k => !ignored.has(k));
+	
+				// If ALL original groups are selected, we can collapse this to a single module ignore.
+				if (selectedGroupKeys.length === groupKeys.length) {
+					invertedIgnoredParams.push(getModuleIgnoreKey(module.code));
+				} else {
+					// Otherwise, add the individually selected groups to the ignore list.
+					invertedIgnoredParams.push(...selectedGroupKeys);
+				}
+			} else {
+				const key = getModuleIgnoreKey(module.code);
+				// If the module (which has no groups) is selected, add it to the ignore list.
+				if (!ignored.has(key)) {
+					invertedIgnoredParams.push(key);
+				}
+			}
+		}
+	
+		const ignoredQueryString = invertedIgnoredParams.join(',');
+		const relativeUrl = `/api/timetable?seminarGroupId=${selectedGroup}${ignoredQueryString ? `&ignore=${ignoredQueryString}` : ''}`;
+		return `${window.location.origin}${relativeUrl}`;
 	}, [ignored, selectedGroup, modules]);
 
 	const handleCopy = () => {
@@ -210,6 +246,15 @@ export function Stundenplan() {
 			navigator.clipboard.writeText(generatedUrl).then(() => {
 				setIsCopied(true);
 				setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+			});
+		}
+	};
+
+	const handleCopyInverted = () => {
+		if (generatedInvertedUrl) {
+			navigator.clipboard.writeText(generatedInvertedUrl).then(() => {
+				setIsCopiedInverted(true);
+				setTimeout(() => setIsCopiedInverted(false), 2000);
 			});
 		}
 	};
@@ -276,6 +321,35 @@ export function Stundenplan() {
 									}
 								/>
 							</FormControl>
+							<Box sx={{ mt: 2 }}>
+								<Button onClick={() => setShowInvertedUrl(!showInvertedUrl)}>
+									{showInvertedUrl ? 'Verstecke invertierte URL' : 'Zeige invertierte URL'}
+								</Button>
+								{showInvertedUrl && (
+									<FormControl fullWidth variant="outlined" sx={{ mt: 1 }}>
+										<InputLabel htmlFor="generated-inverted-url-textfield">Invertierte URL</InputLabel>
+										<OutlinedInput
+											id="generated-inverted-url-textfield"
+											value={generatedInvertedUrl || ''}
+											readOnly
+											label="Invertierte URL"
+											endAdornment={
+												<InputAdornment position="end">
+													<Tooltip title={isCopiedInverted ? "Kopiert!" : "Kopieren"}>
+														<IconButton
+															aria-label="Invertierte URL kopieren"
+															onClick={handleCopyInverted}
+															edge="end"
+														>
+															<ContentCopy />
+														</IconButton>
+													</Tooltip>
+												</InputAdornment>
+											}
+										/>
+									</FormControl>
+								)}
+							</Box>
 						</Box>
 					)}
 				</>
