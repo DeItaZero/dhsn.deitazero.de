@@ -7,6 +7,7 @@ import type { Timetable } from '@shared/types/timetable.types';
 import { loadAllTimetables, saveTimetable } from '../utils/file.utils';
 import ical, {
   ICalEventBusyStatus,
+  ICalEventStatus,
   ICalEventTransparency,
 } from 'ical-generator';
 import { getDistinctObjects, getGroup } from '../utils/utils';
@@ -26,17 +27,17 @@ export class TimetableService {
     const isIgnored = (block: Block) => {
       // Check for standalone module ignore
       if (ignoredSet.has(block.title)) {
-        return false;
+        return true;
       }
       // Check for module|group pair ignore
       const group = getGroup(block);
       if (group) {
         const key = `${block.title}|${group}`;
         if (ignoredSet.has(key)) {
-          return false;
+          return true;
         }
       }
-      return true;
+      return false;
     };
 
     for (let block of blocks) {
@@ -45,7 +46,6 @@ export class TimetableService {
       const group = getGroup(block);
       let description = `Modul: ${moduleCode}\nDozent: ${block.instructor}`;
       if (block.remarks) description += `\nBemerkungen: ${block.remarks}`;
-
       const ignored = isIgnored(block);
 
       calendar.createEvent({
@@ -61,6 +61,7 @@ export class TimetableService {
         busystatus: ignored
           ? ICalEventBusyStatus.FREE
           : ICalEventBusyStatus.BUSY,
+        status: ignored ? ICalEventStatus.TENTATIVE : ICalEventStatus.CONFIRMED,
       });
     }
 
