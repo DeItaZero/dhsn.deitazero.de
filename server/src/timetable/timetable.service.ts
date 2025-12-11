@@ -5,7 +5,10 @@ https://docs.nestjs.com/providers#services
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import type { Timetable } from '@shared/types/timetable.types';
 import { loadAllTimetables, saveTimetable } from '../utils/file.utils';
-import ical from 'ical-generator';
+import ical, {
+  ICalEventBusyStatus,
+  ICalEventTransparency,
+} from 'ical-generator';
 import { getDistinctObjects, getGroup } from '../utils/utils';
 
 @Injectable()
@@ -17,8 +20,9 @@ export class TimetableService {
   ) {
     const timetables = await loadAllTimetables(seminarGroupId);
     let blocks = getDistinctObjects(timetables.flat(1));
+    const isIgnoring = ignoredItems.length > 0;
 
-    if (ignoredItems.length > 0) {
+    if (isIgnoring) {
       const ignoredSet = new Set(ignoredItems);
       blocks = blocks.filter((block) => {
         // Check for standalone module ignore
@@ -37,8 +41,7 @@ export class TimetableService {
       });
     }
 
-    console.log(showedItems);
-    if (showedItems.length > 0) {
+    if (!isIgnoring) {
       const showedSet = new Set(showedItems);
       blocks = blocks.filter((block) => {
         // Check for standalone module ignore
@@ -76,6 +79,12 @@ export class TimetableService {
         allDay: block.allDay,
         location: block.room,
         description,
+        transparency: isIgnoring // For Google, Apple, etc.
+          ? ICalEventTransparency.OPAQUE
+          : ICalEventTransparency.TRANSPARENT,
+        busystatus: isIgnoring // For Microsoft
+          ? ICalEventBusyStatus.BUSY
+          : ICalEventBusyStatus.FREE,
       });
     }
 
