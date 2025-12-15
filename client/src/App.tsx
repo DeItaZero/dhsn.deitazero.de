@@ -26,6 +26,16 @@ function App() {
 						<Route path="/anwesenheit" element={<Anwesenheit />} />
 					</Routes>
 				</Box>
+				<Box component="footer" sx={{ p: 2, mt: 'auto', backgroundColor: 'background.paper' }}>
+					<Toolbar>
+						<Button component="a" href="https://deitazero.de/impressum" color="inherit" sx={{ textTransform: 'none' }}>
+							Impressum
+						</Button>
+						<Button component="a" href="https://deitazero.de/privacy" color="inherit" sx={{ textTransform: 'none' }}>
+							Datenschutz
+						</Button>
+					</Toolbar>
+				</Box>
 			</Box>
 		</BrowserRouter>
 	);
