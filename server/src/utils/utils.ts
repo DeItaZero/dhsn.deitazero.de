@@ -1,4 +1,5 @@
 import { Block } from '@shared/types/block.types';
+import { UserModule } from './file.utils';
 
 export const getDistinct = <T>(array: T[]): T[] => {
   // Guard clause: If array is null/undefined, return empty array
@@ -20,3 +21,6 @@ export const getDistinctObjects = <T>(array: T[]): T[] => {
 
 export const getGroup = (block: Block) =>
   /Gruppe (\w+)/.exec(block.remarks)?.at(1);
+
+export const getUserModuleString = (userModule: UserModule) =>
+  userModule.join('|');
