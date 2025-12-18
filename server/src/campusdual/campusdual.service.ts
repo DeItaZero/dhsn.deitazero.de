@@ -9,7 +9,7 @@ import {
   loadAllUsers,
   loadExamDistribution,
   saveExamDistribution,
-  UserModule,
+  Exam,
 } from '../utils/file.utils';
 import { Agent } from 'https';
 import { create } from 'axios';
@@ -18,7 +18,7 @@ import {
   getModuleCode,
   getPerId,
   getPerYr,
-  getUserModuleString,
+  getExamString,
 } from '../utils/utils';
 
 const instance = create({
@@ -29,7 +29,7 @@ const instance = create({
 
 @Injectable()
 export class CampusdualService {
-  async getDistribution(exam: UserModule) {
+  async getDistribution(exam: Exam) {
     const [moduleCode, year, period] = exam;
     const searchParams = new URLSearchParams();
     searchParams.append('module', getModuleCode(moduleCode));
@@ -43,7 +43,7 @@ export class CampusdualService {
     return response.data as ExamDistribution;
   }
 
-  async checkExam(exam: UserModule) {
+  async checkExam(exam: Exam) {
     const oldDistribution = await loadExamDistribution(exam);
     const newDistribution = await this.getDistribution(exam);
     saveExamDistribution(exam, newDistribution);
@@ -61,9 +61,9 @@ export class CampusdualService {
   async checkExams() {
     const users = await loadAllUsers();
     const examsArray = Array.from(users.values()).flat();
-    const exams = new Array<UserModule>();
+    const exams = new Array<Exam>();
     for (let exam of examsArray) {
-      if (exams.map(getUserModuleString).includes(getUserModuleString(exam)))
+      if (exams.map(getExamString).includes(getExamString(exam)))
         continue;
       exams.push(exam);
     }
@@ -78,8 +78,8 @@ export class CampusdualService {
     for (let [chatId, exams] of users.entries()) {
       const ownNewExams = newResults.filter((result) =>
         exams
-          .map(getUserModuleString)
-          .includes(getUserModuleString(result.exam)),
+          .map(getExamString)
+          .includes(getExamString(result.exam)),
       );
 
       resultMap.set(chatId, ownNewExams);

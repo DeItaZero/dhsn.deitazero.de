@@ -4,7 +4,7 @@ import * as fs from 'node:fs/promises';
 import { Timetable } from '@shared/types/timetable.types';
 import { isValidSeminarGroupId } from './validators';
 import { Module } from '@shared/types/modules.types';
-import { getUserModuleString } from './utils';
+import { getExamString } from './utils';
 
 export async function loadSeminarGroupIds() {
   try {
@@ -72,7 +72,7 @@ export async function saveTimetable(
   }
 }
 
-export type UserModule = [string, number, 'WS' | 'SS'];
+export type Exam = [string, number, 'WS' | 'SS'];
 
 export async function loadAllUsers() {
   try {
@@ -86,15 +86,15 @@ export async function loadAllUsers() {
     const readPromises = filePaths.map(async (filePath) => {
       const chatId = +path.basename(filePath, '.json');
       const content = await fs.readFile(filePath, 'utf-8');
-      return [chatId, JSON.parse(content) as UserModule[]] as [
+      return [chatId, JSON.parse(content) as Exam[]] as [
         number,
-        UserModule[],
+        Exam[],
       ];
     });
     const users = await Promise.all(readPromises);
     return new Map(users);
   } catch (error) {
-    return new Map<number, UserModule[]>();
+    return new Map<number, Exam[]>();
   }
 }
 
@@ -109,13 +109,13 @@ export async function loadUser(chatId: number) {
 
   try {
     const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content) as UserModule[];
+    return JSON.parse(content) as Exam[];
   } catch (error) {
-    return [] as UserModule[];
+    return [] as Exam[];
   }
 }
 
-export async function saveUser(chatId: number, modules: UserModule[]) {
+export async function saveUser(chatId: number, modules: Exam[]) {
   try {
     const dirPath = path.join(process.cwd(), 'data', 'mark_alerts', 'users');
     const filePath = path.join(dirPath, `${chatId}.json`);
@@ -164,13 +164,13 @@ export async function loadExamsDistributions() {
   }
 }
 
-export async function loadExamDistribution(exam: UserModule) {
+export async function loadExamDistribution(exam: Exam) {
   const filePath = path.join(
     process.cwd(),
     'data',
     'mark_alerts',
     'exam_distributions',
-    `${getUserModuleString(exam)}.json`,
+    `${getExamString(exam)}.json`,
   );
 
   try {
@@ -182,7 +182,7 @@ export async function loadExamDistribution(exam: UserModule) {
 }
 
 export async function saveExamDistribution(
-  exam: UserModule,
+  exam: Exam,
   distribution: ExamDistribution,
 ) {
   try {
@@ -192,7 +192,7 @@ export async function saveExamDistribution(
       'mark_alerts',
       'exam_distributions',
     );
-    const filePath = path.join(dirPath, `${getUserModuleString(exam)}.json`);
+    const filePath = path.join(dirPath, `${getExamString(exam)}.json`);
     const fileContent = JSON.stringify(distribution, null, 2);
 
     await fs.mkdir(dirPath, { recursive: true });
@@ -204,7 +204,7 @@ export async function saveExamDistribution(
 }
 
 export type ExamChange = {
-  exam: UserModule;
+  exam: Exam;
   oldDistribution: ExamDistribution | null;
   newDistribution: ExamDistribution;
   newResult: boolean;

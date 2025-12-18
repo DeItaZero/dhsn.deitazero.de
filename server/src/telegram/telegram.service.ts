@@ -3,13 +3,13 @@ https://docs.nestjs.com/providers#services
 */
 
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Markup, Scenes, session, Telegraf } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 import { ConfigService } from '@nestjs/config';
 import { GroupsService } from '../groups/groups.service';
 import { ModulesService } from '../modules/modules.service';
 import { ManagerService, StateEnum } from './manager.service';
-import { loadUser, saveUser, UserModule } from '../utils/file.utils';
-import { getModuleCode, getUserModuleString } from '../utils/utils';
+import { loadUser, saveUser, Exam } from '../utils/file.utils';
+import { getModuleCode, getExamString } from '../utils/utils';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CampusdualService } from '../campusdual/campusdual.service';
 import { generateExamResultImage } from '../utils/image_util';
@@ -54,11 +54,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         await ctx.reply('Nicht bereit!');
         return;
       }
-      const userModules = await loadUser(chat.id);
+      const exams = await loadUser(chat.id);
       const examString =
-        userModules
-          .map(getUserModuleString)
-          .map((userModuleString) => `- ${userModuleString}`)
+        exams
+          .map(getExamString)
+          .map((examString) => `- ${examString}`)
           .join('\n') || 'Keine Prüfungen';
 
       await ctx.reply(
@@ -162,16 +162,16 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const period = ctx.match[1];
       chat.setPeriod(period);
 
-      const userModule = [
+      const exam = [
         chat.getModuleCode(),
         chat.getYear(),
         chat.getPeriod(),
-      ] as UserModule;
+      ] as Exam;
       chat.setReady();
-      const userModules = await loadUser(chat.id);
-      userModules.push(userModule);
-      await saveUser(chat.id, userModules);
-      const text = `Benarichtigungen für die Prüfung ${getUserModuleString(userModule)} aktiviert.`;
+      const exams = await loadUser(chat.id);
+      exams.push(exam);
+      await saveUser(chat.id, exams);
+      const text = `Benarichtigungen für die Prüfung ${getExamString(exam)} aktiviert.`;
       await ctx.reply(text);
 
       try {
@@ -188,13 +188,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const userModules = await loadUser(chat.id);
-      const buttons = userModules
-        .map(getUserModuleString)
-        .map((userModuleString) => [
+      const exams = await loadUser(chat.id);
+      const buttons = exams
+        .map(getExamString)
+        .map((examString) => [
           Markup.button.callback(
-            userModuleString,
-            `REMOVE_USER_MODULE:${userModuleString}`,
+            examString,
+            `REMOVE_USER_MODULE:${examString}`,
           ),
         ]);
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
@@ -210,15 +210,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.bot.action(/REMOVE_USER_MODULE:(.+)/, async (ctx) => {
       const chat = this.managerService.load(ctx);
       if (chat.state !== StateEnum.READY) return;
-      const userModuleString = ctx.match[1];
+      const examString = ctx.match[1];
 
-      let userModules = await loadUser(chat.id);
-      userModules = userModules.filter(
-        (userModule) => userModuleString !== getUserModuleString(userModule),
-      );
-      await saveUser(chat.id, userModules);
+      let exams = await loadUser(chat.id);
+      exams = exams.filter((exam) => examString !== getExamString(exam));
+      await saveUser(chat.id, exams);
       await ctx.reply(
-        `Benarichtigungen für die Prüfung ${userModuleString} deaktiviert!`,
+        `Benarichtigungen für die Prüfung ${examString} deaktiviert!`,
       );
 
       try {
@@ -284,8 +282,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
-    // console.log('Running scheduled task: Sending notifications...');
-    // await this.campusdualService.getDistribution(['5CS-PT4-00', 2025, 'WS']);
     const newResults = await this.campusdualService.checkExams();
     for (let [chatId, ownNewResults] of newResults.entries()) {
       for (let newResult of ownNewResults) {
@@ -294,7 +290,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
           chatId,
           { source: image },
           {
-            caption: `Neues Ergebnis für ${getUserModuleString(newResult.exam)}!`,
+            caption: `Neues Ergebnis für ${getExamString(newResult.exam)}!`,
           },
         );
       }

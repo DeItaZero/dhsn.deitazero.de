@@ -1,5 +1,5 @@
 import { createCanvas, CanvasRenderingContext2D } from 'canvas';
-import { getUserModuleString } from '../utils/utils';
+import { getExamString } from '../utils/utils';
 import { ExamChange } from './file.utils';
 
 export async function generateExamResultImage(
@@ -25,7 +25,7 @@ export async function generateExamResultImage(
   ctx.fillStyle = '#000000';
   ctx.font = 'bold 24px Arial';
   ctx.textAlign = 'center';
-  const moduleName = getUserModuleString(change.exam);
+  const moduleName = getExamString(change.exam);
   ctx.fillText(`Ergebnisse: ${moduleName}`, width / 2, padding - 10);
 
   // Calculate Max Y for scaling
