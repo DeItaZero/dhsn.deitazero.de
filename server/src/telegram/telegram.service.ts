@@ -14,6 +14,7 @@ import { getExamString } from '../utils/utils';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CampusdualService } from '../campusdual/campusdual.service';
 import { generateExamResultImage } from '../utils/image_util';
+import { isValidModuleCode } from '../utils/validators';
 
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
@@ -104,6 +105,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const buttons = modules.map((module) => [
         Markup.button.callback(module.name, `ADD_MODULE_CODE:${module.code}`),
       ]);
+      buttons.push([
+        Markup.button.callback('Anderes', 'ADD_MODULE_CODE:CUSTOM'),
+      ]);
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply(`Wähle ein Modul aus:`, inlineKeyboard);
 
@@ -117,6 +121,17 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.bot.action(/ADD_MODULE_CODE:(.+)/, async (ctx) => {
       const chat = this.managerService.load(ctx);
       if (chat.state !== StateEnum.ADD_SEMINAR_GROUP_ID_SET) return;
+      if (ctx.match[1] === 'CUSTOM') {
+        ctx.reply(
+          'Gebe den Modulcode, genau wie er auf Campus Dual steht, ein: (z.B. 5CS-PT1-00)',
+        );
+        try {
+          ctx.deleteMessage();
+        } catch (e) {
+          console.log(e);
+        }
+        return;
+      }
       const moduleCode = ctx.match[1];
       chat.setModuleCode(moduleCode);
 
@@ -272,12 +287,51 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.bot.command('cancel', async (ctx) => {
       const chat = this.managerService.load(ctx);
       if (chat.state === StateEnum.READY) {
-        ctx.reply('Bereits bereit!');
+        ctx.reply('Schon bereit!');
+      } else {
+        chat.setReady();
+        ctx.reply('Abgebrochen!');
+      }
+
+      try {
+        ctx.deleteMessage();
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    this.bot.on('text', async (ctx) => {
+      const chat = this.managerService.load(ctx);
+      if (chat.state !== StateEnum.ADD_SEMINAR_GROUP_ID_SET) return;
+
+      const moduleCode = ctx.message.text.trim();
+      if (!isValidModuleCode(moduleCode)) {
+        await ctx.reply(
+          'Ungültiger Modulcode! Gib erneut einen Modulcode ein:',
+        );
+        try {
+          ctx.deleteMessage();
+        } catch (e) {
+          console.log(e);
+        }
         return;
       }
 
-      chat.setReady();
-      ctx.reply('Abgebrochen!');
+      const buttons = [
+        Markup.button.callback('Bestätigen', `ADD_MODULE_CODE:${moduleCode}`),
+        Markup.button.callback('Abbrechen', 'ADD_MODULE_CODE:CUSTOM'),
+      ];
+      const inlineKeyboard = Markup.inlineKeyboard(buttons);
+      await ctx.reply(
+        `Bestätige das Modul ${moduleCode} auszuwählen:`,
+        inlineKeyboard,
+      );
+
+      try {
+        ctx.deleteMessage();
+      } catch (e) {
+        console.log(e);
+      }
     });
   }
 

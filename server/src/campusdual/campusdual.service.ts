@@ -67,11 +67,19 @@ export class CampusdualService {
       exams.push(exam);
     }
 
-    console.log(exams);
+    console.log('Checking the following exams:');
+    console.log(exams.map(getExamString).join('\n') || 'No exams');
+    console.log('-'.repeat(20));
 
     const checkPromises = exams.map((exam) => this.checkExam(exam));
     const results = await Promise.all(checkPromises);
     const newResults = results.filter((result) => result.newResult);
+
+    console.log('Exams with new results:');
+    console.log(
+      newResults.map((r) => getExamString(r.exam)).join('\n') || 'No exams',
+    );
+    console.log('-'.repeat(20));
 
     const resultMap = new Map<number, ExamChange[]>();
     for (let [chatId, exams] of users.entries()) {
