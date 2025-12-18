@@ -48,7 +48,14 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   }
 
   private registerHandlers() {
-    this.bot.start((ctx) => ctx.reply('Bot gestartet 🚀'));
+    this.bot.start(async (ctx) => {
+      await ctx.reply('Bot gestartet 🚀');
+      try {
+        ctx.deleteMessage();
+      } catch (e) {
+        console.log(e);
+      }
+    });
 
     this.bot.command('show', async (ctx) => {
       const chat = this.managerService.load(ctx);
@@ -66,12 +73,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       await ctx.reply(
         `Du hast Benachrichtigung für die folgenden Prüfungen aktiviert:\n${examString}`,
       );
-
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
     });
 
     this.bot.command('add', async (ctx) => {
@@ -87,12 +88,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       ]);
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply('Wähle deine Seminargruppe aus:', inlineKeyboard);
-
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
     });
 
     this.bot.action(/ADD_SEMINAR_GROUP_ID:(.+)/, async (ctx) => {
@@ -215,12 +210,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         ]);
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply('Wähle eine Prüfung aus:', inlineKeyboard);
-
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
     });
 
     this.bot.action(/REMOVE_USER_MODULE:(.+)/, async (ctx) => {
@@ -258,12 +247,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         'Bestätige, Benarichtigungen für alle Prüfungen zu deaktivieren:',
         inlineKeyboard,
       );
-
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
     });
 
     this.bot.action(/CLEAR_USER_MODULES:(.+)/, async (ctx) => {
@@ -291,12 +274,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       } else {
         chat.setReady();
         ctx.reply('Abgebrochen!');
-      }
-
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
       }
     });
 
