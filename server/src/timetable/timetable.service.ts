@@ -2,8 +2,8 @@
 https://docs.nestjs.com/providers#services
 */
 
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import type { Timetable } from '@shared/types/timetable.types';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import type { Timetable } from '@shared/types/Timetable';
 import { loadAllTimetables, saveTimetable } from '../utils/file.utils';
 import ical, {
   ICalEventBusyStatus,
@@ -21,6 +21,10 @@ export class TimetableService {
     const timetables = await loadAllTimetables(seminarGroupId);
     let blocks = getDistinctObjects(timetables.flat(1));
     const isIgnoring = ignoredItems.length > 0;
+    const isShowing = showedItems.length > 0;
+
+    if (isIgnoring && isShowing)
+      throw new BadRequestException("Can't combine ignore and show.");
 
     if (isIgnoring) {
       const ignoredSet = new Set(ignoredItems);
@@ -41,7 +45,7 @@ export class TimetableService {
       });
     }
 
-    if (!isIgnoring) {
+    if (isShowing) {
       const showedSet = new Set(showedItems);
       blocks = blocks.filter((block) => {
         // Check for standalone module ignore

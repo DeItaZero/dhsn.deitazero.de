@@ -7,13 +7,12 @@ import {
   Body,
   Controller,
   Get,
-  Header,
   Post,
   Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import type { Timetable } from '@shared/types/timetable.types';
+import type { Timetable } from '@shared/types/Timetable';
 import { TimetableService } from './timetable.service';
 import { isValidSeminarGroupId, isValidStudentId } from '../utils/validators';
 
@@ -22,8 +21,6 @@ export class TimetableController {
   constructor(private readonly timetableService: TimetableService) {}
 
   @Get()
-  @Header('Content-Type', 'text/calendar; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="timetable.ics"')
   async getTimetable(
     @Res() response: Response,
     @Query('seminarGroupId') seminarGroupId: string,

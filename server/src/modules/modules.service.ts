@@ -4,8 +4,7 @@ https://docs.nestjs.com/providers#services
 
 import { Injectable } from '@nestjs/common';
 import { loadAllTimetables } from '../utils/file.utils';
-import { Block } from '@shared/types/block.types';
-import { Module } from '@shared/types/modules.types';
+import { Module } from '@shared/types/Module';
 import { getDistinct, getGroup } from '../utils/utils';
 
 @Injectable()
