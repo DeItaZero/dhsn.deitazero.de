@@ -9,7 +9,10 @@ import { GroupsService } from '../groups/groups.service';
 import { ModulesService } from '../modules/modules.service';
 import { ManagerService, StateEnum } from './manager.service';
 import { loadUser, saveUser, UserModule } from '../utils/file.utils';
-import { getUserModuleString } from '../utils/utils';
+import { getModuleCode, getUserModuleString } from '../utils/utils';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { CampusdualService } from '../campusdual/campusdual.service';
+import { generateExamResultImage } from '../utils/image_util';
 
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
@@ -20,6 +23,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     private readonly modulesService: ModulesService,
     private readonly groupsService: GroupsService,
     private readonly managerService: ManagerService,
+    private readonly campusdualService: CampusdualService,
   ) {
     const options = this.config.get<string>('BOT_TOKEN')!;
     this.bot = new Telegraf(options);
@@ -28,9 +32,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.registerHandlers();
     await this.bot.telegram.setMyCommands([
-      { command: 'add', description: 'Ein Modul hinzufügen' },
-      { command: 'remove', description: 'Ein Modul entfernen' },
-      { command: 'clear', description: 'Alle Module entfernen' },
+      { command: 'show', description: 'Alle Prüfungen anzeigen' },
+      { command: 'add', description: 'Eine Prüfung hinzufügen' },
+      { command: 'remove', description: 'Eine Prüfung entfernen' },
+      { command: 'clear', description: 'Alle Prüfungen entfernen' },
       { command: 'cancel', description: 'Command abbrechen' },
     ]);
     this.bot.launch();
@@ -42,6 +47,30 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   private registerHandlers() {
     this.bot.start((ctx) => ctx.reply('Bot gestartet 🚀'));
+
+    this.bot.command('show', async (ctx) => {
+      const chat = this.managerService.load(ctx);
+      if (chat.state !== StateEnum.READY) {
+        await ctx.reply('Nicht bereit!');
+        return;
+      }
+      const userModules = await loadUser(chat.id);
+      const examString =
+        userModules
+          .map(getUserModuleString)
+          .map((userModuleString) => `- ${userModuleString}`)
+          .join('\n') || 'Keine Prüfungen';
+
+      await ctx.reply(
+        `Du hast Benachrichtigung für die folgenden Prüfungen aktiviert:\n${examString}`,
+      );
+
+      try {
+        ctx.deleteMessage();
+      } catch (e) {
+        console.log(e);
+      }
+    });
 
     this.bot.command('add', async (ctx) => {
       const chat = this.managerService.load(ctx);
@@ -251,5 +280,24 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       chat.setReady();
       ctx.reply('Abgebrochen!');
     });
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    // console.log('Running scheduled task: Sending notifications...');
+    // await this.campusdualService.getDistribution(['5CS-PT4-00', 2025, 'WS']);
+    const newResults = await this.campusdualService.checkExams();
+    for (let [chatId, ownNewResults] of newResults.entries()) {
+      for (let newResult of ownNewResults) {
+        const image = await generateExamResultImage(newResult);
+        await this.bot.telegram.sendPhoto(
+          chatId,
+          { source: image },
+          {
+            caption: `Neues Ergebnis für ${getUserModuleString(newResult.exam)}!`,
+          },
+        );
+      }
+    }
   }
 }

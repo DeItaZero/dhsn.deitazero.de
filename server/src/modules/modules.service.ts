@@ -6,7 +6,7 @@ import { Injectable } from '@nestjs/common';
 import { loadAllTimetables } from '../utils/file.utils';
 import { Block } from '@shared/types/block.types';
 import { Module } from '@shared/types/modules.types';
-import { getDistinct, getGroup } from '../utils/utils';
+import { getModuleCode, getDistinct, getGroup } from '../utils/utils';
 
 @Injectable()
 export class ModulesService {

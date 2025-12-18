@@ -4,16 +4,16 @@ import * as fs from 'node:fs/promises';
 import { Timetable } from '@shared/types/timetable.types';
 import { isValidSeminarGroupId } from './validators';
 import { Module } from '@shared/types/modules.types';
+import { getUserModuleString } from './utils';
 
 export async function loadSeminarGroupIds() {
   try {
-    const dirPath = path.join(process.cwd(), 'data');
+    const dirPath = path.join(process.cwd(), 'data', 'timetables');
 
     const items = await fs.readdir(dirPath, { withFileTypes: true });
     const seminarGroupIds = items
       .filter((item) => item.isDirectory()) // Only directories
-      .map((dir) => dir.name)
-      .filter((name) => isValidSeminarGroupId(name));
+      .map((dir) => dir.name);
 
     return seminarGroupIds;
   } catch (error) {
@@ -24,7 +24,12 @@ export async function loadSeminarGroupIds() {
 
 export async function loadAllTimetables(seminarGroupId: string) {
   try {
-    const dirPath = path.join(process.cwd(), 'data', seminarGroupId);
+    const dirPath = path.join(
+      process.cwd(),
+      'data',
+      'timetables',
+      seminarGroupId,
+    );
 
     const files = await fs.readdir(dirPath, { withFileTypes: true });
     const filePaths = files
@@ -50,7 +55,12 @@ export async function saveTimetable(
   seminarGroupId: string,
 ) {
   try {
-    const dirPath = path.join(process.cwd(), 'data', seminarGroupId);
+    const dirPath = path.join(
+      process.cwd(),
+      'data',
+      'timetables',
+      seminarGroupId,
+    );
     const filePath = path.join(dirPath, `${studentId}.json`);
     const fileContent = JSON.stringify(timetable, null, 2);
 
@@ -62,13 +72,38 @@ export async function saveTimetable(
   }
 }
 
-export type UserModule = [string, number, string];
+export type UserModule = [string, number, 'WS' | 'SS'];
+
+export async function loadAllUsers() {
+  try {
+    const dirPath = path.join(process.cwd(), 'data', 'mark_alerts', 'users');
+    const files = await fs.readdir(dirPath, { withFileTypes: true });
+    const filePaths = files
+      .filter((file) => file.isFile()) // Ignore directories
+      .map((file) => file.name)
+      .map((filename) => path.join(dirPath, filename));
+
+    const readPromises = filePaths.map(async (filePath) => {
+      const chatId = +path.basename(filePath, '.json');
+      const content = await fs.readFile(filePath, 'utf-8');
+      return [chatId, JSON.parse(content) as UserModule[]] as [
+        number,
+        UserModule[],
+      ];
+    });
+    const users = await Promise.all(readPromises);
+    return new Map(users);
+  } catch (error) {
+    return new Map<number, UserModule[]>();
+  }
+}
 
 export async function loadUser(chatId: number) {
   const filePath = path.join(
     process.cwd(),
     'data',
-    'MarkAlerts',
+    'mark_alerts',
+    'users',
     `${chatId}.json`,
   );
 
@@ -82,7 +117,7 @@ export async function loadUser(chatId: number) {
 
 export async function saveUser(chatId: number, modules: UserModule[]) {
   try {
-    const dirPath = path.join(process.cwd(), 'data', 'MarkAlerts');
+    const dirPath = path.join(process.cwd(), 'data', 'mark_alerts', 'users');
     const filePath = path.join(dirPath, `${chatId}.json`);
     const fileContent = JSON.stringify(modules, null, 2);
 
@@ -93,3 +128,84 @@ export async function saveUser(chatId: number, modules: UserModule[]) {
     throw new InternalServerErrorException('Failed to save file');
   }
 }
+
+type GradeCount = { GRADETEXT: string; COUNT: number };
+export type ExamDistribution = [
+  GradeCount,
+  GradeCount,
+  GradeCount,
+  GradeCount,
+  GradeCount,
+];
+
+export async function loadExamsDistributions() {
+  try {
+    const dirPath = path.join(
+      process.cwd(),
+      'data',
+      'mark_alerts',
+      'exam_distributions',
+    );
+    const files = await fs.readdir(dirPath, { withFileTypes: true });
+    const filePaths = files
+      .filter((file) => file.isFile()) // Ignore directories
+      .map((file) => file.name)
+      .map((filename) => path.join(dirPath, filename));
+
+    const readPromises = filePaths.map(async (filePath) => {
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content) as Timetable;
+    });
+
+    return await Promise.all(readPromises);
+  } catch (error) {
+    console.error(error);
+    throw new InternalServerErrorException('Failed to load file');
+  }
+}
+
+export async function loadExamDistribution(exam: UserModule) {
+  const filePath = path.join(
+    process.cwd(),
+    'data',
+    'mark_alerts',
+    'exam_distributions',
+    `${getUserModuleString(exam)}.json`,
+  );
+
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content) as ExamDistribution;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function saveExamDistribution(
+  exam: UserModule,
+  distribution: ExamDistribution,
+) {
+  try {
+    const dirPath = path.join(
+      process.cwd(),
+      'data',
+      'mark_alerts',
+      'exam_distributions',
+    );
+    const filePath = path.join(dirPath, `${getUserModuleString(exam)}.json`);
+    const fileContent = JSON.stringify(distribution, null, 2);
+
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(filePath, fileContent, 'utf-8');
+  } catch (error) {
+    console.error(error);
+    throw new InternalServerErrorException('Failed to save file');
+  }
+}
+
+export type ExamChange = {
+  exam: UserModule;
+  oldDistribution: ExamDistribution | null;
+  newDistribution: ExamDistribution;
+  newResult: boolean;
+};
