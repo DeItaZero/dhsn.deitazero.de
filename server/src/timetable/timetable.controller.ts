@@ -7,7 +7,6 @@ import {
   Body,
   Controller,
   Get,
-  Header,
   Post,
   Query,
   Res,
@@ -22,8 +21,6 @@ export class TimetableController {
   constructor(private readonly timetableService: TimetableService) {}
 
   @Get()
-  @Header('Content-Type', 'text/calendar; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="timetable.ics"')
   async getTimetable(
     @Res() response: Response,
     @Query('seminarGroupId') seminarGroupId: string,
