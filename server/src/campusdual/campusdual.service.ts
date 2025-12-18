@@ -4,13 +4,13 @@ https://docs.nestjs.com/providers#services
 
 import { Injectable } from '@nestjs/common';
 import {
-  ExamChange,
-  ExamDistribution,
   loadAllUsers,
   loadExamDistribution,
   saveExamDistribution,
-  Exam,
 } from '../utils/file.utils';
+import { Exam } from '@shared/types/Exam';
+import { ExamDistribution } from '@shared/types/ExamDistribution';
+import { ExamChange } from '@shared/types/ExamChange';
 import { Agent } from 'https';
 import { create } from 'axios';
 import {
@@ -63,8 +63,7 @@ export class CampusdualService {
     const examsArray = Array.from(users.values()).flat();
     const exams = new Array<Exam>();
     for (let exam of examsArray) {
-      if (exams.map(getExamString).includes(getExamString(exam)))
-        continue;
+      if (exams.map(getExamString).includes(getExamString(exam))) continue;
       exams.push(exam);
     }
 
@@ -77,9 +76,7 @@ export class CampusdualService {
     const resultMap = new Map<number, ExamChange[]>();
     for (let [chatId, exams] of users.entries()) {
       const ownNewExams = newResults.filter((result) =>
-        exams
-          .map(getExamString)
-          .includes(getExamString(result.exam)),
+        exams.map(getExamString).includes(getExamString(result.exam)),
       );
 
       resultMap.set(chatId, ownNewExams);

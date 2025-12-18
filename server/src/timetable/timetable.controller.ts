@@ -13,7 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import type { Timetable } from '@shared/types/timetable.types';
+import type { Timetable } from '@shared/types/Timetable';
 import { TimetableService } from './timetable.service';
 import { isValidSeminarGroupId, isValidStudentId } from '../utils/validators';
 

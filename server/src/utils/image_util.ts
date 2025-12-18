@@ -1,6 +1,6 @@
 import { createCanvas, CanvasRenderingContext2D } from 'canvas';
 import { getExamString } from '../utils/utils';
-import { ExamChange } from './file.utils';
+import { ExamChange } from '@shared/types/ExamChange';
 
 export async function generateExamResultImage(
   change: ExamChange,

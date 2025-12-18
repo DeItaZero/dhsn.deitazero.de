@@ -3,7 +3,7 @@ https://docs.nestjs.com/providers#services
 */
 
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import type { Timetable } from '@shared/types/timetable.types';
+import type { Timetable } from '@shared/types/Timetable';
 import { loadAllTimetables, saveTimetable } from '../utils/file.utils';
 import ical, {
   ICalEventBusyStatus,

@@ -1,5 +1,6 @@
-import { Block } from '@shared/types/block.types';
-import { ExamDistribution, Exam } from './file.utils';
+import { Block } from '@shared/types/Block';
+import { Exam } from '@shared/types/Exam';
+import { ExamDistribution } from '@shared/types/ExamDistribution';
 
 export const getDistinct = <T>(array: T[]): T[] => {
   // Guard clause: If array is null/undefined, return empty array

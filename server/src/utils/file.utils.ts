@@ -1,10 +1,10 @@
 import { InternalServerErrorException } from '@nestjs/common';
 import path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { Timetable } from '@shared/types/timetable.types';
-import { isValidSeminarGroupId } from './validators';
-import { Module } from '@shared/types/modules.types';
+import { Timetable } from '@shared/types/Timetable';
 import { getExamString } from './utils';
+import { ExamDistribution } from '@shared/types/ExamDistribution';
+import { Exam } from '@shared/types/Exam';
 
 export async function loadSeminarGroupIds() {
   try {
@@ -72,8 +72,6 @@ export async function saveTimetable(
   }
 }
 
-export type Exam = [string, number, 'WS' | 'SS'];
-
 export async function loadAllUsers() {
   try {
     const dirPath = path.join(process.cwd(), 'data', 'mark_alerts', 'users');
@@ -86,10 +84,7 @@ export async function loadAllUsers() {
     const readPromises = filePaths.map(async (filePath) => {
       const chatId = +path.basename(filePath, '.json');
       const content = await fs.readFile(filePath, 'utf-8');
-      return [chatId, JSON.parse(content) as Exam[]] as [
-        number,
-        Exam[],
-      ];
+      return [chatId, JSON.parse(content) as Exam[]] as [number, Exam[]];
     });
     const users = await Promise.all(readPromises);
     return new Map(users);
@@ -128,15 +123,6 @@ export async function saveUser(chatId: number, modules: Exam[]) {
     throw new InternalServerErrorException('Failed to save file');
   }
 }
-
-type GradeCount = { GRADETEXT: string; COUNT: number };
-export type ExamDistribution = [
-  GradeCount,
-  GradeCount,
-  GradeCount,
-  GradeCount,
-  GradeCount,
-];
 
 export async function loadExamsDistributions() {
   try {
@@ -202,10 +188,3 @@ export async function saveExamDistribution(
     throw new InternalServerErrorException('Failed to save file');
   }
 }
-
-export type ExamChange = {
-  exam: Exam;
-  oldDistribution: ExamDistribution | null;
-  newDistribution: ExamDistribution;
-  newResult: boolean;
-};
