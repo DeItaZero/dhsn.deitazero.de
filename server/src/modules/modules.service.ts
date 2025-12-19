@@ -2,32 +2,43 @@
 https://docs.nestjs.com/providers#services
 */
 
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { loadAllTimetables } from '../utils/file.utils';
 import { Module } from '@shared/types/Module';
 import { getDistinct, getGroup } from '../utils/utils';
 
 @Injectable()
 export class ModulesService {
-  async getModules(seminarGroupId: string) {
-    const timetables = await loadAllTimetables(seminarGroupId);
-    const blocks = timetables.flat(1);
-    const moduleCodes = getDistinct(blocks.map((block) => block.title));
+  private readonly logger = new Logger(ModulesService.name);
 
-    return moduleCodes.map((moduleCode) => {
-      const filteredBlocks = blocks.filter(
-        (block) => block.title === moduleCode,
-      );
-      const moduleName = filteredBlocks.at(0)?.description;
-      const groups = getDistinct(
-        filteredBlocks.map(getGroup).filter((group) => group !== undefined),
-      );
-      return {
-        code: moduleCode,
-        name: moduleName,
-        groups: groups.length > 0 ? groups : undefined,
-      } as Module;
-    });
+  async getModules(seminarGroupId: string) {
+    try {
+      const timetables = await loadAllTimetables(seminarGroupId);
+      const blocks = timetables.flat(1);
+      const moduleCodes = getDistinct(blocks.map((block) => block.title));
+
+      return moduleCodes.map((moduleCode) => {
+        const filteredBlocks = blocks.filter(
+          (block) => block.title === moduleCode,
+        );
+        const moduleName = filteredBlocks.at(0)?.description;
+        const groups = getDistinct(
+          filteredBlocks.map(getGroup).filter((group) => group !== undefined),
+        );
+        return {
+          code: moduleCode,
+          name: moduleName,
+          groups: groups.length > 0 ? groups : undefined,
+        } as Module;
+      });
+    } catch (error) {
+      this.logger.error(`Modules couldn't be loaded\n${error}`);
+      throw new InternalServerErrorException("Modules couldn't be loaded");
+    }
   }
 
   async hasGroups(seminarGroupId: string, moduleCode: string) {
@@ -41,14 +52,19 @@ export class ModulesService {
     moduleCode: string,
     group?: string,
   ) {
-    const timetables = await loadAllTimetables(seminarGroupId);
-    const blocks = timetables.flat(1);
-    let filteredBlocks = blocks.filter((block) => block.title === moduleCode);
-    if (group)
-      filteredBlocks = filteredBlocks.filter(
-        (block) => getGroup(block) === group || getGroup(block) === undefined,
-      );
+    try {
+      const timetables = await loadAllTimetables(seminarGroupId);
+      const blocks = timetables.flat(1);
+      let filteredBlocks = blocks.filter((block) => block.title === moduleCode);
+      if (group)
+        filteredBlocks = filteredBlocks.filter(
+          (block) => getGroup(block) === group || getGroup(block) === undefined,
+        );
 
-    return filteredBlocks;
+      return filteredBlocks;
+    } catch (error) {
+      this.logger.error(`Module info couldn't be loaded\n${error}`);
+      throw new InternalServerErrorException("Module info couldn't be loaded");
+    }
   }
 }

@@ -28,14 +28,14 @@ export class TimetableController {
     @Query('show') show?: string,
   ) {
     if (!isValidSeminarGroupId(seminarGroupId))
-      throw new BadRequestException('seminar group id invalid');
+      throw new BadRequestException('Seminar group id invalid');
 
     const ignoredModules = ignore ? ignore.split(',') : [];
     const showedModules = show ? show.split(',') : [];
 
     if (ignoredModules.length > 0 && showedModules.length > 0)
       throw new BadRequestException(
-        'modules can be either explicitely ignored or showed',
+        'Modules can be either explicitely ignored or showed',
       );
 
     const timetable = await this.timetableService.getTimetable(
@@ -54,10 +54,10 @@ export class TimetableController {
     @Query('seminarGroupId') seminarGroupId: string,
   ) {
     if (!isValidStudentId(studentId))
-      throw new BadRequestException('student id invalid');
+      throw new BadRequestException('Student id invalid');
 
     if (!isValidSeminarGroupId(seminarGroupId))
-      throw new BadRequestException('seminar group id invalid');
+      throw new BadRequestException('Seminar group id invalid');
 
     return await this.timetableService.importTimetable(
       timetable,

@@ -2,7 +2,7 @@
 https://docs.nestjs.com/providers#services
 */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   loadAllUsers,
   loadExamDistribution,
@@ -29,6 +29,8 @@ const instance = create({
 
 @Injectable()
 export class CampusdualService {
+  private readonly logger = new Logger(CampusdualService.name);
+
   async getDistribution(exam: Exam) {
     const [moduleCode, year, period] = exam;
     const searchParams = new URLSearchParams();
@@ -39,14 +41,20 @@ export class CampusdualService {
       'https://selfservice.campus-dual.de/acwork/mscoredist?' +
       searchParams.toString();
 
-    const response = await instance.get(url);
-    return response.data as ExamDistribution;
+    try {
+      const response = await instance.get(url);
+      return response.data as ExamDistribution;
+    } catch (error) {
+      this.logger.error(error);
+      return null;
+    }
   }
 
   async checkExam(exam: Exam) {
     const oldDistribution = await loadExamDistribution(exam);
     const newDistribution = await this.getDistribution(exam);
-    saveExamDistribution(exam, newDistribution);
+
+    if (newDistribution) saveExamDistribution(exam, newDistribution);
 
     return {
       exam,
@@ -54,6 +62,7 @@ export class CampusdualService {
       newDistribution,
       newResult:
         oldDistribution &&
+        newDistribution &&
         getMarkCount(newDistribution) !== getMarkCount(oldDistribution),
     } as ExamChange;
   }
@@ -67,19 +76,19 @@ export class CampusdualService {
       exams.push(exam);
     }
 
-    console.log('Checking the following exams:');
-    console.log(exams.map(getExamString).join('\n') || 'No exams');
-    console.log('-'.repeat(20));
+    this.logger.log('Checking the following exams:');
+    this.logger.log(exams.map(getExamString).join('\n') || 'No exams');
+    this.logger.log('-'.repeat(20));
 
     const checkPromises = exams.map((exam) => this.checkExam(exam));
     const results = await Promise.all(checkPromises);
     const newResults = results.filter((result) => result.newResult);
 
-    console.log('Exams with new results:');
-    console.log(
+    this.logger.log('Exams with new results:');
+    this.logger.log(
       newResults.map((r) => getExamString(r.exam)).join('\n') || 'No exams',
     );
-    console.log('-'.repeat(20));
+    this.logger.log('-'.repeat(20));
 
     const resultMap = new Map<number, ExamChange[]>();
     for (let [chatId, exams] of users.entries()) {
