@@ -91,12 +91,12 @@ export class TimetableService {
           allDay: block.allDay,
           location: block.room,
           description,
-          transparency: isIgnoring // For Google, Apple, etc.
-            ? ICalEventTransparency.OPAQUE
-            : ICalEventTransparency.TRANSPARENT,
-          busystatus: isIgnoring // For Microsoft
-            ? ICalEventBusyStatus.BUSY
-            : ICalEventBusyStatus.FREE,
+          transparency: isShowing // For Google, Apple, etc.
+            ? ICalEventTransparency.TRANSPARENT
+            : ICalEventTransparency.OPAQUE,
+          busystatus: isShowing // For Microsoft
+            ? ICalEventBusyStatus.FREE
+            : ICalEventBusyStatus.BUSY,
         });
       }
 
