@@ -15,7 +15,7 @@ import { ModulesService } from '../modules/modules.service';
 import { ManagerService, StateEnum } from './manager.service';
 import { loadUser, saveUser } from '../utils/file.utils';
 import { Exam } from '@shared/types/Exam';
-import { getExamString } from '../utils/utils';
+import { getExamString, getModuleCode } from '../utils/utils';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CampusdualService } from '../campusdual/campusdual.service';
 import { generateExamResultImage } from '../utils/image_util';
@@ -121,8 +121,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       chat.setSeminarGroupId(groupId);
 
       const modules = await this.modulesService.getModules(groupId);
-      const buttons = modules.map((module) => [
-        Markup.button.callback(module.name, `ADD_MODULE_CODE:${module.code}`),
+      const moduleCodes = Array.from(
+        new Set(modules.map((module) => getModuleCode(module.code))),
+      );
+      const buttons = moduleCodes.map((moduleCode) => [
+        Markup.button.callback(moduleCode, `ADD_MODULE_CODE:${moduleCode}`),
       ]);
       buttons.push([
         Markup.button.callback('Anderes', 'ADD_MODULE_CODE:CUSTOM'),
