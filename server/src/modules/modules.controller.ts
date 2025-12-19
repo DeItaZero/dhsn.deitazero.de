@@ -17,7 +17,7 @@ export class ModulesController {
   @Get()
   async getAllModules(@Query('seminarGroupId') seminarGroupId: string) {
     if (!isValidSeminarGroupId(seminarGroupId))
-      throw new BadRequestException('seminar group id invalid');
+      throw new BadRequestException('Seminar group id invalid');
 
     return await this.modulesService.getModules(seminarGroupId);
   }
@@ -29,10 +29,10 @@ export class ModulesController {
     @Query('group') group: string,
   ) {
     if (!isValidSeminarGroupId(seminarGroupId))
-      throw new BadRequestException('seminar group id invalid');
+      throw new BadRequestException('Seminar group id invalid');
 
     if (!isValidModuleCode(moduleCode))
-      throw new BadRequestException('module code invalid');
+      throw new BadRequestException('Module code invalid');
 
     const hasGroups = await this.modulesService.hasGroups(
       seminarGroupId,
@@ -40,7 +40,7 @@ export class ModulesController {
     );
 
     if (hasGroups && !isValidGroup(group))
-      throw new BadRequestException('group invalid');
+      throw new BadRequestException('Group invalid');
 
     return await this.modulesService.getModuleInfo(
       seminarGroupId,

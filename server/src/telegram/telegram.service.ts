@@ -2,8 +2,13 @@
 https://docs.nestjs.com/providers#services
 */
 
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Markup, Telegraf } from 'telegraf';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
+import { Context, Markup, Telegraf } from 'telegraf';
 import { ConfigService } from '@nestjs/config';
 import { GroupsService } from '../groups/groups.service';
 import { ModulesService } from '../modules/modules.service';
@@ -18,7 +23,9 @@ import { isValidModuleCode } from '../utils/validators';
 
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(TelegramService.name);
   private bot: Telegraf;
+  private botDisabled: boolean;
 
   constructor(
     private readonly config: ConfigService,
@@ -27,8 +34,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     private readonly managerService: ManagerService,
     private readonly campusdualService: CampusdualService,
   ) {
-    const options = this.config.get<string>('BOT_TOKEN')!;
-    this.bot = new Telegraf(options);
+    this.botDisabled = this.config.get<boolean>('DISABLE_BOT') || false;
+    const botToken = this.config.get<string>('BOT_TOKEN')!;
+    this.bot = new Telegraf(botToken);
   }
 
   async onModuleInit() {
@@ -40,21 +48,30 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       { command: 'clear', description: 'Alle Prüfungen entfernen' },
       { command: 'cancel', description: 'Command abbrechen' },
     ]);
+    if (this.botDisabled) {
+      this.logger.log('Bot disabled');
+      return;
+    }
     this.bot.launch();
+    this.logger.log('Bot launched!');
   }
 
   onModuleDestroy() {
     this.bot.stop();
   }
 
+  private deleteMessage(ctx: Context) {
+    try {
+      ctx.deleteMessage();
+    } catch (e) {
+      this.logger.error(e);
+    }
+  }
+
   private registerHandlers() {
     this.bot.start(async (ctx) => {
       await ctx.reply('Bot gestartet 🚀');
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
 
     this.bot.command('show', async (ctx) => {
@@ -63,16 +80,23 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         await ctx.reply('Nicht bereit!');
         return;
       }
-      const exams = await loadUser(chat.id);
-      const examString =
-        exams
-          .map(getExamString)
-          .map((examString) => `- ${examString}`)
-          .join('\n') || 'Keine Prüfungen';
+      try {
+        const exams = await loadUser(chat.id);
+        const examString =
+          exams
+            .map(getExamString)
+            .map((examString) => `- ${examString}`)
+            .join('\n') || 'Keine Prüfungen';
 
-      await ctx.reply(
-        `Du hast Benachrichtigung für die folgenden Prüfungen aktiviert:\n${examString}`,
-      );
+        await ctx.reply(
+          `Du hast Benachrichtigung für die folgenden Prüfungen aktiviert:\n${examString}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Benachrichtigungen konnten nicht geladen werden\n${error}`,
+        );
+        await ctx.reply('Benachrichtigungen konnten nicht geladen werden!');
+      }
     });
 
     this.bot.command('add', async (ctx) => {
@@ -106,11 +130,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply(`Wähle ein Modul aus:`, inlineKeyboard);
 
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
 
     this.bot.action(/ADD_MODULE_CODE:(.+)/, async (ctx) => {
@@ -123,7 +143,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         try {
           ctx.deleteMessage();
         } catch (e) {
-          console.log(e);
+          this.logger.error(e);
         }
         return;
       }
@@ -140,11 +160,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply(`Wähle das Jahr aus:`, inlineKeyboard);
 
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
 
     this.bot.action(/ADD_YEAR:(.+)/, async (ctx) => {
@@ -160,11 +176,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const inlineKeyboard = Markup.inlineKeyboard(buttons);
       await ctx.reply(`Wähle das Semester aus:`, inlineKeyboard);
 
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
 
     this.bot.action(/ADD_PERIOD:(.+)/, async (ctx) => {
@@ -179,17 +191,20 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         chat.getPeriod(),
       ] as Exam;
       chat.setReady();
-      const exams = await loadUser(chat.id);
-      exams.push(exam);
-      await saveUser(chat.id, exams);
-      const text = `Benarichtigungen für die Prüfung ${getExamString(exam)} aktiviert.`;
-      await ctx.reply(text);
-
       try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
+        const exams = await loadUser(chat.id);
+        exams.push(exam);
+        await saveUser(chat.id, exams);
+        const text = `Benarichtigungen für die Prüfung ${getExamString(exam)} aktiviert.`;
+        await ctx.reply(text);
+      } catch (error) {
+        this.logger.error(
+          `Benarichtigung konnte nicht gespeichert werden\n${error}`,
+        );
+        await ctx.reply('Benarichtigung konnte nicht gespeichert werden!');
       }
+
+      this.deleteMessage(ctx);
     });
 
     this.bot.command('remove', async (ctx) => {
@@ -199,17 +214,24 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const exams = await loadUser(chat.id);
-      const buttons = exams
-        .map(getExamString)
-        .map((examString) => [
-          Markup.button.callback(
-            examString,
-            `REMOVE_USER_MODULE:${examString}`,
-          ),
-        ]);
-      const inlineKeyboard = Markup.inlineKeyboard(buttons);
-      await ctx.reply('Wähle eine Prüfung aus:', inlineKeyboard);
+      try {
+        const exams = await loadUser(chat.id);
+        const buttons = exams
+          .map(getExamString)
+          .map((examString) => [
+            Markup.button.callback(
+              examString,
+              `REMOVE_USER_MODULE:${examString}`,
+            ),
+          ]);
+        const inlineKeyboard = Markup.inlineKeyboard(buttons);
+        await ctx.reply('Wähle eine Prüfung aus:', inlineKeyboard);
+      } catch (error) {
+        this.logger.error(
+          `Benachrichtigungen konnten nicht geladen werden\n${error}`,
+        );
+        await ctx.reply('Benachrichtigungen konnten nicht geladen werden!');
+      }
     });
 
     this.bot.action(/REMOVE_USER_MODULE:(.+)/, async (ctx) => {
@@ -217,18 +239,21 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       if (chat.state !== StateEnum.READY) return;
       const examString = ctx.match[1];
 
-      let exams = await loadUser(chat.id);
-      exams = exams.filter((exam) => examString !== getExamString(exam));
-      await saveUser(chat.id, exams);
-      await ctx.reply(
-        `Benarichtigungen für die Prüfung ${examString} deaktiviert!`,
-      );
-
       try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
+        let exams = await loadUser(chat.id);
+        exams = exams.filter((exam) => examString !== getExamString(exam));
+        await saveUser(chat.id, exams);
+        await ctx.reply(
+          `Benarichtigungen für die Prüfung ${examString} deaktiviert!`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Benachrichtigung konnte nicht deaktiviert werden\n${error}`,
+        );
+        await ctx.reply('Benachrichtigung konnte nicht deaktiviert werden!');
       }
+
+      this.deleteMessage(ctx);
     });
 
     this.bot.command('clear', async (ctx) => {
@@ -254,17 +279,20 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       if (chat.state !== StateEnum.READY) return;
       const confirmed = ctx.match[1];
       if (confirmed === 'CONFIRM') {
-        await saveUser(chat.id, []);
-        await ctx.reply(`Benarichtigungen für alle Prüfungen deaktiviert!`);
+        try {
+          await saveUser(chat.id, []);
+          await ctx.reply(`Benarichtigungen für alle Prüfungen deaktiviert!`);
+        } catch (error) {
+          this.logger.error(
+            `Benachrichtigungen konnten nicht gelöscht werden\n${error}`,
+          );
+          await ctx.reply('Benachrichtigungen konnten nicht gelöscht werden!');
+        }
       } else {
         await ctx.reply('Abgebrochen!');
       }
 
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
 
     this.bot.command('cancel', async (ctx) => {
@@ -289,7 +317,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         try {
           ctx.deleteMessage();
         } catch (e) {
-          console.log(e);
+          this.logger.error(e);
         }
         return;
       }
@@ -304,16 +332,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         inlineKeyboard,
       );
 
-      try {
-        ctx.deleteMessage();
-      } catch (e) {
-        console.log(e);
-      }
+      this.deleteMessage(ctx);
     });
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
+    if (this.botDisabled) return;
     const newResults = await this.campusdualService.checkExams();
     for (let [chatId, ownNewResults] of newResults.entries()) {
       for (let newResult of ownNewResults) {
