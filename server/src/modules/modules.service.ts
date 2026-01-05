@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { loadAllTimetables } from '../utils/file.utils';
 import { Module } from '@shared/types/Module';
-import { getDistinct, getGroup } from '../utils/utils';
+import { getDistinct, getDistinctObjects, getGroup } from '../utils/utils';
 
 @Injectable()
 export class ModulesService {
@@ -61,7 +61,7 @@ export class ModulesService {
           (block) => getGroup(block) === group || getGroup(block) === undefined,
         );
 
-      return filteredBlocks;
+      return getDistinctObjects(filteredBlocks);
     } catch (error) {
       this.logger.error(`Module info couldn't be loaded\n${error}`);
       throw new InternalServerErrorException("Module info couldn't be loaded");

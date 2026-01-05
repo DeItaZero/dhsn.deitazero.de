@@ -70,7 +70,19 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   private registerHandlers() {
     this.bot.start(async (ctx) => {
-      await ctx.reply('Bot gestartet 🚀');
+      await ctx.reply(
+        `👋 Willkommen beim Prüfungs-Bot!
+
+Hier sind die Befehle, die du nutzen kannst:
+
+/show - Zeigt dir alle Prüfungen, für die du aktuell Benachrichtigungen erhältst.
+/add - Fügt eine neue Prüfung zur Überwachung hinzu.
+/remove - Entfernt eine spezifische Prüfung aus deiner Liste.
+/clear - Löscht alle deine gespeicherten Prüfungs-Benachrichtigungen.
+/cancel - Bricht den aktuellen Vorgang (z.B. das Hinzufügen) ab.
+
+Tipp: Sobald du eine Prüfung mit /add hinzugefügt hast, schicke ich dir automatisch eine Nachricht, wenn eine neue Note auf Campus Dual eingetragen wurde! 🎓`,
+      );
       this.deleteMessage(ctx);
     });
 
