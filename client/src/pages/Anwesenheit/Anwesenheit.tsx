@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
 } from '@mui/material';
+import { green, red, blue } from '@mui/material/colors';
 import { GroupsService } from '@api/groups.service';
 import { ModulesService } from '@api/modules.service';
 import type { Module as ModuleType } from '@shared/types/Module';
@@ -24,12 +25,13 @@ const Anwesenheit: React.FC = () => {
   const [modules, setModules] = useState<ModuleType[]>([]);
   const [selectedModuleCode, setSelectedModuleCode] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
-  const [attendedModules, setAttendedModules] = useState<number | ''>('');
+  const [attendedModules, setAttendedModules] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [totalModules, setTotalModules] = useState<number>(0);
   const [attendance, setAttendance] = useState<number>(0);
+  const [blockStatuses, setBlockStatuses] = useState<Record<string, 'present' | 'absent' | 'future'>>({});
 
   useEffect(() => {
     document.title = "Anwesenheit";
@@ -62,14 +64,46 @@ const Anwesenheit: React.FC = () => {
   }, [selectedSeminarGroup]);
 
   useEffect(() => {
-    if (attendedModules !== '' && totalModules > 0) {
+    if (attendedModules >= 0 && totalModules > 0) {
       setAttendance((attendedModules / totalModules) * 100);
     } else {
       setAttendance(0);
     }
   }, [attendedModules, totalModules]);
 
+  useEffect(() => {
+    const attendedCount = Object.values(blockStatuses).filter(
+      (status) => status === 'present'
+    ).length;
+    setAttendedModules(attendedCount);
+  }, [blockStatuses]);
+
   const selectedModule = modules.find(m => m.code === selectedModuleCode);
+
+  const getBlockKey = useCallback((block: Block) => {
+    return `attendance-${selectedSeminarGroup}-${selectedModuleCode}-${selectedGroup}-${block.start}`;
+  }, [selectedSeminarGroup, selectedModuleCode, selectedGroup]);
+
+  useEffect(() => {
+    if (blocks.length > 0) {
+      const now = Date.now();
+      const newStatuses: Record<string, 'present' | 'absent' | 'future'> = {};
+
+      for (const block of blocks) {
+        const key = getBlockKey(block);
+        const storedStatus = localStorage.getItem(key) as 'present' | 'absent' | null;
+
+        if (block.start * 1000 > now) { // Future
+          newStatuses[key] = 'future';
+        } else { // Past
+          newStatuses[key] = storedStatus === 'absent' ? 'absent' : 'present';
+        }
+      }
+      setBlockStatuses(newStatuses);
+    } else {
+      setBlockStatuses({});
+    }
+  }, [blocks, getBlockKey]);
 
   useEffect(() => {
     const hasGroups = selectedModule && selectedModule.groups && selectedModule.groups.length > 0;
@@ -96,14 +130,30 @@ const Anwesenheit: React.FC = () => {
     }
   }, [selectedModuleCode, selectedGroup, selectedSeminarGroup, modules, selectedModule]);
 
-  const handleAttendedModulesChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = event.target.value === '' ? '' : Number(event.target.value);
-    if (value === '' || (Number.isInteger(value) && value >= 0)) {
-      setAttendedModules(value);
+  const handleBlockClick = useCallback((block: Block) => {
+    const isFuture = block.start * 1000 > Date.now();
+    if (isFuture) {
+      return;
     }
-  };
+
+    const key = getBlockKey(block);
+    setBlockStatuses(prevStatuses => {
+      const currentStatus = prevStatuses[key];
+      let newStatus = currentStatus;
+
+      if (currentStatus === 'present') {
+        newStatus = 'absent';
+      } else if (currentStatus === 'absent') {
+        newStatus = 'present';
+      }
+
+      if (newStatus !== currentStatus) {
+        localStorage.setItem(key, newStatus);
+        return { ...prevStatuses, [key]: newStatus };
+      }
+      return prevStatuses;
+    });
+  }, [getBlockKey]);
 
   return (
     <Container className="anwesenheit-page">
@@ -173,14 +223,7 @@ const Anwesenheit: React.FC = () => {
           {blocks.length > 0 && (
             <>
               <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <TextField
-                  label="Anzahl besuchter Module"
-                  type="number"
-                  value={attendedModules}
-                  onChange={handleAttendedModulesChange}
-                  inputProps={{ min: '0', step: '1' }}
-                />
-                <Typography variant="body1">/ {totalModules}</Typography>
+                <Typography variant="body1">Anzahl besuchter Module: {attendedModules} / {totalModules}</Typography>
               </Box>
 
               <Box sx={{ mt: 3 }}>
@@ -197,12 +240,22 @@ const Anwesenheit: React.FC = () => {
             {blocks.length > 0 ? (
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2, mt: 2 }}>
                 {blocks.map((block) => (
-                  <Card key={`${block.start}-${block.title}`} variant="outlined">
+                  <Card
+                    key={`${block.start}-${block.title}`}
+                    variant="outlined"
+                    onClick={() => handleBlockClick(block)}
+                    sx={{
+                      cursor: block.start * 1000 > Date.now() ? 'default' : 'pointer',
+                      backgroundColor: blockStatuses[getBlockKey(block)] === 'present' ? green[800]
+                        : blockStatuses[getBlockKey(block)] === 'absent' ? red[800]
+                          : blue[800],
+                      color: 'white',
+                    }}>
                     <CardContent>
                       <Typography variant="subtitle1" component="div">{block.description}</Typography>
-                      <Typography color="text.secondary">{new Date(block.start * 1000).toLocaleString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
-                      <Typography color="text.secondary">{block.instructor}</Typography>
-                      <Typography color="text.secondary">{block.room}</Typography>
+                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{new Date(block.start * 1000).toLocaleString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
+                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{block.instructor}</Typography>
+                      <Typography sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>{block.room}</Typography>
                     </CardContent>
                   </Card>
                 ))}
