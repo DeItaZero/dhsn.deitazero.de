@@ -19,7 +19,7 @@ import {
 	Collapse,
 } from '@mui/material';
 import ContentCopy from '@mui/icons-material/ContentCopy';
-import OpenInNew from '@mui/icons-material/OpenInNew';
+import Timer from '@mui/icons-material/Timer';
 import { ModulesService } from '@api/modules.service';
 import { GroupsService } from '@api/groups.service';
 import type { Module } from '@shared/types/Module';
@@ -298,7 +298,7 @@ export function Stundenplan() {
 							<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
 								<Button
 									variant="outlined"
-									startIcon={<OpenInNew />}
+									startIcon={<Timer />}
 									component={RouterLink}
 									to={relativeTimerUrl || ''}
 									fullWidth
