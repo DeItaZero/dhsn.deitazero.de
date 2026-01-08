@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link as RouterLink, Navigate } from "reac
 import { AppBar, Box, Toolbar, Button } from "@mui/material";
 import { Stundenplan } from "./pages/Stundenplan/Stundenplan";
 import Anwesenheit from "./pages/Anwesenheit/Anwesenheit";
+import { Timer } from "./pages/Timer/Timer";
 
 function App() {
 	return (
@@ -24,6 +25,7 @@ function App() {
 						<Route path="/" element={<Navigate to="/stundenplan" />} />
 						<Route path="/stundenplan" element={<Stundenplan />} />
 						<Route path="/anwesenheit" element={<Anwesenheit />} />
+						<Route path="/timer" element={<Timer />} />
 					</Routes>
 				</Box>
 				<Box component="footer" sx={{ p: 2, mt: 'auto', backgroundColor: 'background.paper' }}>
