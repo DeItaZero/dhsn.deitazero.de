@@ -26,6 +26,8 @@ const Anwesenheit: React.FC = () => {
   const [selectedModuleCode, setSelectedModuleCode] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [attendedModules, setAttendedModules] = useState<number>(0);
+  const [absentModules, setAbsentModules] = useState<number>(0);
+  const [futureModules, setFutureModules] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -72,10 +74,15 @@ const Anwesenheit: React.FC = () => {
   }, [attendedModules, totalModules]);
 
   useEffect(() => {
-    const attendedCount = Object.values(blockStatuses).filter(
+    const values = Object.values(blockStatuses);
+    const attendedCount = values.filter(
       (status) => status === 'present'
     ).length;
+    const absentCount = values.filter((status) => status === 'absent').length;
+    const futureCount = values.filter((status) => status === 'future').length;
     setAttendedModules(attendedCount);
+    setAbsentModules(absentCount);
+    setFutureModules(futureCount);
   }, [blockStatuses]);
 
   const selectedModule = modules.find(m => m.code === selectedModuleCode);
@@ -225,18 +232,39 @@ const Anwesenheit: React.FC = () => {
               <CardContent sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Anzahl besuchter Module
+                    Besucht
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h4" sx={{ color: green[800] }}>
                     {attendedModules}
-                    <Typography component="span" variant="h6" color="text.secondary" sx={{ ml: 1 }}>
-                      / {totalModules}
-                    </Typography>
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Anwesenheit
+                    Versäumt
+                  </Typography>
+                  <Typography variant="h4" sx={{ color: red[800] }}>
+                    {absentModules}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Ausstehend
+                  </Typography>
+                  <Typography variant="h4" sx={{ color: blue[800] }}>
+                    {futureModules}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Gesamt
+                  </Typography>
+                  <Typography variant="h4">
+                    {totalModules}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Quote
                   </Typography>
                   <Typography variant="h4">
                     {attendance.toFixed(2)}%
