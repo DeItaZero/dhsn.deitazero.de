@@ -14,8 +14,8 @@ import {
 } from '@mui/material';
 import { GroupsService } from '@api/groups.service';
 import { ModulesService } from '@api/modules.service';
-import type { Module as ModuleType } from '@shared/types/modules.types';
-import type { Block } from '@shared/types/block.types';
+import type { Module as ModuleType } from '@shared/types/Module';
+import type { Block } from '@shared/types/Block';
 import './Anwesenheit.css';
 
 const Anwesenheit: React.FC = () => {

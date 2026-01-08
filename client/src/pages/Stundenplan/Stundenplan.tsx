@@ -20,7 +20,7 @@ import {
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import { ModulesService } from '@api/modules.service';
 import { GroupsService } from '@api/groups.service';
-import type { Module } from '@shared/types/modules.types';
+import type { Module } from '@shared/types/Module';
 
 // --- Helper Functions ---
 const getModuleIgnoreKey = (moduleCode: string) => moduleCode;

@@ -1,6 +1,6 @@
 import { http } from "./http";
-import type { Module } from "@shared/types/modules.types";
-import type { Block } from "@shared/types/block.types";
+import type { Module } from "@shared/types/Module";
+import type { Block } from "@shared/types/Block";
 
 export const ModulesService = {
 	get(seminarGroupId: string) {
