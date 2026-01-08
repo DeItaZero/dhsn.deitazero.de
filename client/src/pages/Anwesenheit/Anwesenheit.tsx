@@ -221,18 +221,29 @@ const Anwesenheit: React.FC = () => {
           )}
 
           {blocks.length > 0 && (
-            <>
-              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body1">Anzahl besuchter Module: {attendedModules} / {totalModules}</Typography>
-              </Box>
-
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6">Anwesenheit</Typography>
-                <Typography variant="body1">
-                  {attendance.toFixed(2)} %
-                </Typography>
-              </Box>
-            </>
+            <Card variant="outlined" sx={{ mb: 4 }}>
+              <CardContent sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Anzahl besuchter Module
+                  </Typography>
+                  <Typography variant="h4">
+                    {attendedModules}
+                    <Typography component="span" variant="h6" color="text.secondary" sx={{ ml: 1 }}>
+                      / {totalModules}
+                    </Typography>
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Anwesenheit
+                  </Typography>
+                  <Typography variant="h4">
+                    {attendance.toFixed(2)}%
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
           )}
 
           <Box sx={{ mt: 3 }}>
