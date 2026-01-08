@@ -3,6 +3,6 @@ import { http } from "./http";
 
 export const TimerService = {
   get() {
-    return http<Block[]>("/api/timer?seminarGroupId=CS23-2");
+    return http<Block[]>(`/api/timer` + window.location.search);
   },
 };
