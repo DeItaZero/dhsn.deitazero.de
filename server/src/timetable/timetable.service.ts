@@ -20,7 +20,7 @@ import { getDistinctObjects, getGroup } from '../utils/utils';
 export class TimetableService {
   private readonly logger = new Logger(TimetableService.name);
 
-  async getTimetable(
+  async getTimetableBlocks(
     seminarGroupId: string,
     ignoredItems: string[] = [],
     showedItems: string[] = [],
@@ -72,41 +72,55 @@ export class TimetableService {
         });
       }
 
-      const calendar = ical({
-        name: `Stundenplan ${seminarGroupId}`,
-        timezone: 'Europe/Berlin',
-      });
-
-      for (let block of blocks) {
-        const moduleCode = block.title;
-        const moduleName = block.description;
-        const group = getGroup(block);
-        let description = `Modul: ${moduleCode}\nDozent: ${block.instructor}`;
-        if (block.remarks) description += `\nBemerkungen: ${block.remarks}`;
-
-        calendar.createEvent({
-          start: new Date(block.start * 1000),
-          end: new Date(block.end * 1000),
-          summary: group ? `${group} | ${moduleName}` : moduleName,
-          allDay: block.allDay,
-          location: block.room,
-          description,
-          transparency: isShowing // For Google, Apple, etc.
-            ? ICalEventTransparency.TRANSPARENT
-            : ICalEventTransparency.OPAQUE,
-          busystatus: isShowing // For Microsoft
-            ? ICalEventBusyStatus.FREE
-            : ICalEventBusyStatus.BUSY,
-        });
-      }
-
-      return calendar.toString();
+      return { blocks, isIgnoring, isShowing };
     } catch (error) {
       this.logger.error(
         `Failed to load timetable for ${seminarGroupId}\n${error}`,
       );
       throw new InternalServerErrorException(`Failed to load timetable`);
     }
+  }
+
+  async getTimetable(
+    seminarGroupId: string,
+    ignoredItems: string[] = [],
+    showedItems: string[] = [],
+  ) {
+    const { blocks, isIgnoring, isShowing } = await this.getTimetableBlocks(
+      seminarGroupId,
+      ignoredItems,
+      showedItems,
+    );
+
+    const calendar = ical({
+      name: `Stundenplan ${seminarGroupId}`,
+      timezone: 'Europe/Berlin',
+    });
+
+    for (let block of blocks) {
+      const moduleCode = block.title;
+      const moduleName = block.description;
+      const group = getGroup(block);
+      let description = `Modul: ${moduleCode}\nDozent: ${block.instructor}`;
+      if (block.remarks) description += `\nBemerkungen: ${block.remarks}`;
+
+      calendar.createEvent({
+        start: new Date(block.start * 1000),
+        end: new Date(block.end * 1000),
+        summary: group ? `${group} | ${moduleName}` : moduleName,
+        allDay: block.allDay,
+        location: block.room,
+        description,
+        transparency: isShowing // For Google, Apple, etc.
+          ? ICalEventTransparency.TRANSPARENT
+          : ICalEventTransparency.OPAQUE,
+        busystatus: isShowing // For Microsoft
+          ? ICalEventBusyStatus.FREE
+          : ICalEventBusyStatus.BUSY,
+      });
+    }
+
+    return calendar.toString();
   }
 
   async importTimetable(

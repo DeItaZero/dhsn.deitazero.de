@@ -18,9 +18,10 @@ import {
 	Collapse,
 } from '@mui/material';
 import ContentCopy from '@mui/icons-material/ContentCopy';
+import OpenInNew from '@mui/icons-material/OpenInNew';
 import { ModulesService } from '@api/modules.service';
 import { GroupsService } from '@api/groups.service';
-import type { Module } from '@shared/types/modules.types';
+import type { Module } from '@shared/types/Module';
 
 // --- Helper Functions ---
 const getModuleIgnoreKey = (moduleCode: string) => moduleCode;
@@ -96,7 +97,9 @@ export function Stundenplan() {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 	const [generatedUrlWithShow, setGeneratedUrlWithShow] = useState<string | null>(null);
+	const [timerUrl, setTimerUrl] = useState<string | null>(null);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+	const [isTimerCopied, setIsTimerCopied] = useState<boolean>(false);
 	const [isCopiedWithShow, setIsCopiedWithShow] = useState<boolean>(false);
 	const [showAdvancedUrl, setShowAdvancedUrl] = useState<boolean>(false);
 
@@ -178,6 +181,7 @@ export function Stundenplan() {
 		if (typeof window === 'undefined' || !selectedGroup) {
 			setGeneratedUrl(null);
 			setGeneratedUrlWithShow(null);
+			setTimerUrl(null);
 			return;
 		}
 
@@ -211,6 +215,10 @@ export function Stundenplan() {
 		const fullUrl = `${window.location.origin}${relativeUrl}`;
 		setGeneratedUrl(fullUrl);
 
+		const relativeTimerUrl = `/timer?seminarGroupId=${selectedGroup}${paramString ? `&ignore=${encodeURIComponent(paramString)}` : ''}`;
+		const fullTimerUrl = `${window.location.origin}${relativeTimerUrl}`;
+		setTimerUrl(fullTimerUrl);
+
 		const relativeUrlWithShow = `/api/timetable?seminarGroupId=${selectedGroup}${paramString ? `&show=${encodeURIComponent(paramString)}` : ''}`;
 		const fullUrlWithShow = `${window.location.origin}${relativeUrlWithShow}`;
 		setGeneratedUrlWithShow(fullUrlWithShow);
@@ -221,6 +229,15 @@ export function Stundenplan() {
 			navigator.clipboard.writeText(generatedUrl).then(() => {
 				setIsCopied(true);
 				setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+			});
+		}
+	};
+
+	const handleTimerCopy = () => {
+		if (timerUrl) {
+			navigator.clipboard.writeText(timerUrl).then(() => {
+				setIsTimerCopied(true);
+				setTimeout(() => setIsTimerCopied(false), 2000); // Reset after 2 seconds
 			});
 		}
 	};
@@ -274,6 +291,28 @@ export function Stundenplan() {
 					</Box>
 					{generatedUrl && (
 						<Box sx={{ mt: 3 }}>
+							<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+								<Button
+									variant="outlined"
+									startIcon={<OpenInNew />}
+									href={timerUrl || ''}
+									target="_blank"
+									fullWidth
+									sx={{ height: 56 }}
+								>
+									Timer öffnen
+								</Button>
+								<Tooltip title={isTimerCopied ? "Kopiert!" : "Link kopieren"}>
+									<Button
+										variant="outlined"
+										onClick={handleTimerCopy}
+										sx={{ minWidth: 56, width: 56, height: 56, p: 0 }}
+									>
+										<ContentCopy />
+									</Button>
+								</Tooltip>
+							</Box>
+
 							<FormControl fullWidth variant="outlined">
 								<InputLabel htmlFor="generated-url-textfield">Generierte URL</InputLabel>
 								<OutlinedInput
