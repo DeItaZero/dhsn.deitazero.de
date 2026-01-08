@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
 	Box,
 	Card,
@@ -98,6 +99,7 @@ export function Stundenplan() {
 	const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 	const [generatedUrlWithShow, setGeneratedUrlWithShow] = useState<string | null>(null);
 	const [timerUrl, setTimerUrl] = useState<string | null>(null);
+	const [relativeTimerUrl, setRelativeTimerUrl] = useState<string | null>(null);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 	const [isTimerCopied, setIsTimerCopied] = useState<boolean>(false);
 	const [isCopiedWithShow, setIsCopiedWithShow] = useState<boolean>(false);
@@ -182,6 +184,7 @@ export function Stundenplan() {
 			setGeneratedUrl(null);
 			setGeneratedUrlWithShow(null);
 			setTimerUrl(null);
+			setRelativeTimerUrl(null);
 			return;
 		}
 
@@ -216,6 +219,7 @@ export function Stundenplan() {
 		setGeneratedUrl(fullUrl);
 
 		const relativeTimerUrl = `/timer?seminarGroupId=${selectedGroup}${paramString ? `&ignore=${encodeURIComponent(paramString)}` : ''}`;
+		setRelativeTimerUrl(relativeTimerUrl);
 		const fullTimerUrl = `${window.location.origin}${relativeTimerUrl}`;
 		setTimerUrl(fullTimerUrl);
 
@@ -295,8 +299,8 @@ export function Stundenplan() {
 								<Button
 									variant="outlined"
 									startIcon={<OpenInNew />}
-									href={timerUrl || ''}
-									target="_blank"
+									component={RouterLink}
+									to={relativeTimerUrl || ''}
 									fullWidth
 									sx={{ height: 56 }}
 								>
