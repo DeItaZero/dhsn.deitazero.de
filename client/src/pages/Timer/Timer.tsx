@@ -44,8 +44,8 @@ export const Timer = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const { segments, currentStatus, progressPercent, dayStart, dayEnd } = useMemo(() => {
-    if (blocks.length === 0) return { segments: [], currentStatus: null, progressPercent: 0, dayStart: 0, dayEnd: 0 };
+  const { segments, currentStatus, progressPercent, dayStart, dayEnd, timeLeftWithBreaks, timeLeftWithoutBreaks } = useMemo(() => {
+    if (blocks.length === 0) return { segments: [], currentStatus: null, progressPercent: 0, dayStart: 0, dayEnd: 0, timeLeftWithBreaks: 0, timeLeftWithoutBreaks: 0 };
 
     // Assume 90 min duration if end is missing.
     const getEnd = (b: Block) => (b as any).end || (b.start + 90 * 60);
@@ -57,6 +57,7 @@ export const Timer = () => {
 
     const segs: { type: 'block' | 'pause'; start: number; end: number; data?: Block }[] = [];
     let lastEnd = start;
+    let timeLeftWithoutBreaks = 0;
 
     blocks.forEach(block => {
       const bStart = block.start;
@@ -67,7 +68,15 @@ export const Timer = () => {
       }
       segs.push({ type: 'block', start: bStart, end: bEnd, data: block });
       lastEnd = bEnd;
+
+      if (currentSec < bStart) {
+        timeLeftWithoutBreaks += (bEnd - bStart);
+      } else if (currentSec < bEnd) {
+        timeLeftWithoutBreaks += (bEnd - currentSec);
+      }
     });
+
+    const timeLeftWithBreaks = Math.max(0, end - currentSec);
 
     let status = null;
     if (currentSec < start) {
@@ -88,7 +97,7 @@ export const Timer = () => {
 
     const pPercent = Math.min(100, Math.max(0, ((currentSec - start) / totalDuration) * 100));
 
-    return { segments: segs, currentStatus: status, progressPercent: pPercent, dayStart: start, dayEnd: end };
+    return { segments: segs, currentStatus: status, progressPercent: pPercent, dayStart: start, dayEnd: end, timeLeftWithBreaks, timeLeftWithoutBreaks };
   }, [blocks, now]);
 
   return (
@@ -158,6 +167,26 @@ export const Timer = () => {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Total Timers */}
+            <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+                <Card variant="outlined" sx={{ flex: 1 }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="subtitle2" color="text.secondary">Restzeit (mit Pausen)</Typography>
+                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                            {formatTimeRemaining(timeLeftWithBreaks)}
+                        </Typography>
+                    </CardContent>
+                </Card>
+                <Card variant="outlined" sx={{ flex: 1 }}>
+                    <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="subtitle2" color="text.secondary">Restzeit (ohne Pausen)</Typography>
+                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                            {formatTimeRemaining(timeLeftWithoutBreaks)}
+                        </Typography>
+                    </CardContent>
+                </Card>
+            </Box>
 
             {/* Day Progress Bar */}
             <Box sx={{ mb: 4 }}>
