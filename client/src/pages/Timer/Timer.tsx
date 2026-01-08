@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Container, Typography, Card, CardContent, CircularProgress, Box, Tooltip, useTheme } from "@mui/material";
 import "./Timer.css";
 import type { Block } from "@shared/types/Block";
