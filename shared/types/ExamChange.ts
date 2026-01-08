@@ -1,5 +1,5 @@
-import { Exam } from './Exam';
-import { ExamDistribution } from './ExamDistribution';
+import type { Exam } from './Exam';
+import type { ExamDistribution } from './ExamDistribution';
 
 
 export type ExamChange = {
