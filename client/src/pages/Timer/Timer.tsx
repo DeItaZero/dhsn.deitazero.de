@@ -173,7 +173,7 @@ export const Timer = () => {
                 <Card variant="outlined" sx={{ flex: 1 }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="subtitle2" color="text.secondary">Restzeit (mit Pausen)</Typography>
-                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace', fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                             {formatTimeRemaining(timeLeftWithBreaks)}
                         </Typography>
                     </CardContent>
@@ -181,7 +181,7 @@ export const Timer = () => {
                 <Card variant="outlined" sx={{ flex: 1 }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                         <Typography variant="subtitle2" color="text.secondary">Restzeit (ohne Pausen)</Typography>
-                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                        <Typography variant="h4" sx={{ mt: 1, fontFamily: 'monospace', fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                             {formatTimeRemaining(timeLeftWithoutBreaks)}
                         </Typography>
                     </CardContent>
